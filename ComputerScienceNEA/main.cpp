@@ -3,16 +3,17 @@
 #include <iostream>
 
 void gameMenu(sf::RenderWindow& window) {
+    sf::Texture buttonOffTexture;
+    buttonOffTexture.loadFromFile("blue.jpg");
+    sf::Texture buttonOnTexture;
+    buttonOnTexture.loadFromFile("green.png");
+    sf::Font arialRounded;
+    arialRounded.loadFromFile("ARLRDBD.ttf");
+
+    Button button = Button(window, buttonOffTexture, buttonOnTexture, false, "Cooler Button", arialRounded, 10, 10, 200, 50);
+    slider difficultySlider = slider(window, buttonOnTexture, buttonOffTexture, 0.4, 0.3026, 0.591, 0.1577);
+
     while (window.isOpen()) {
-        sf::Texture buttonOffTexture;
-        buttonOffTexture.loadFromFile("blue.jpg");
-        sf::Texture buttonOnTexture;
-        buttonOnTexture.loadFromFile("green.png");
-        sf::Font arialRounded;
-        arialRounded.loadFromFile("ARLRDBD.ttf");
-
-        Button button = Button(window, buttonOffTexture, buttonOnTexture, false, "Cooler Button", arialRounded, 10, 10, 200, 50);
-
         sf::Event event;
         while (window.pollEvent(event))
         {
@@ -22,6 +23,7 @@ void gameMenu(sf::RenderWindow& window) {
 
         window.clear();
 
+        difficultySlider.draw(window);
         button.draw(window);
         if (button.isPressed(window)) {
             return;
@@ -38,16 +40,16 @@ void gameMenu(sf::RenderWindow& window) {
 }
 
 void settingsMenu(sf::RenderWindow& window) {
+    sf::Texture buttonOffTexture;
+    buttonOffTexture.loadFromFile("blue.jpg");
+    sf::Texture buttonOnTexture;
+    buttonOnTexture.loadFromFile("green.png");
+    sf::Font arialRounded;
+    arialRounded.loadFromFile("ARLRDBD.ttf");
+
+    Button button = Button(window, buttonOffTexture, buttonOnTexture, false, "Super Duper Uncool Button", arialRounded, 10, 10, 200, 50);
+
     while (window.isOpen()) {
-        sf::Texture buttonOffTexture;
-        buttonOffTexture.loadFromFile("blue.jpg");
-        sf::Texture buttonOnTexture;
-        buttonOnTexture.loadFromFile("green.png");
-        sf::Font arialRounded;
-        arialRounded.loadFromFile("ARLRDBD.ttf");
-
-        Button button = Button(window, buttonOffTexture, buttonOnTexture, false, "Super Duper Uncool Button", arialRounded, 10, 10, 200, 50);
-
         sf::Event event;
         while (window.pollEvent(event))
         {
@@ -75,7 +77,7 @@ void settingsMenu(sf::RenderWindow& window) {
 int main()
 {
     sf::RenderWindow window(sf::VideoMode(1280, 720), "SFML works!");
-    window.setFramerateLimit(60);
+    window.setFramerateLimit(30);
 
     sf::Texture buttonOffTexture;
     buttonOffTexture.loadFromFile("blue.jpg");
@@ -88,6 +90,8 @@ int main()
     Button tutorialButton = Button(window, buttonOffTexture, buttonOnTexture, false, "Tutorial", arialRounded, 0.378, 0.514, 0.227, 0.104);
     Button settingsButton = Button(window, buttonOffTexture, buttonOnTexture, false, "Settings", arialRounded, 0.377, 0.659, 0.227, 0.087);
     Button exitButton = Button(window, buttonOffTexture, buttonOnTexture, false, "Exit", arialRounded, 0.021, 0.877, 0.123, 0.095);
+
+
 
     while (window.isOpen())
     {

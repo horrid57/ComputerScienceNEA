@@ -93,11 +93,92 @@ public:
 	};
 };
 
-class RadialButtons {
-private:
-	
+
+class bar {
 public:
-	RadialButtons(int number) {
-		Button buttonArray[number];
+	sf::Sprite sprite;
+
+	bar() {};
+	bar(sf::Texture& texture, int xPosition, int yPosition, int width, int height) {
+		sprite.setTexture(texture);
+		sf::FloatRect spriteBounds = sprite.getGlobalBounds();
+		sprite.setScale(width / spriteBounds.width, height / spriteBounds.height);
+		sprite.setPosition(xPosition, yPosition);
 	};
+
+	void draw(sf::RenderWindow& window) {
+		window.draw(sprite);
+	};
+
+	bool inBounds(sf::RenderWindow& window) {
+		sf::Vector2i mousePosition = sf::Mouse::getPosition(window);
+		sf::FloatRect bounds = sprite.getGlobalBounds();
+		if (mousePosition.x < bounds.left + bounds.width && mousePosition.x > bounds.width &&
+			mousePosition.y < bounds.top + bounds.height && mousePosition.y > bounds.top) {
+			return true;
+		}
+		return false;
+	}
+
+	sf::FloatRect getBounds() {
+		return sprite.getGlobalBounds();
+	}
+};
+
+
+class pointer {
+public:
+	sf::Sprite sprite;
+
+	pointer() {};
+	pointer(sf::Texture& texture, int xPosition, int yPosition, int width, int height) {
+		sprite.setTexture(texture);
+		sf::FloatRect spriteBounds = sprite.getGlobalBounds();
+		sprite.setScale(width / spriteBounds.width, height / spriteBounds.height);
+		sprite.setPosition(xPosition, yPosition);
+		sprite.setOrigin(spriteBounds.width / 2, spriteBounds.height / 2);
+	};
+
+	void draw(sf::RenderWindow& window) {
+		window.draw(sprite);
+	};
+
+	void movePointer(sf::RenderWindow& window, sf::FloatRect barBounds) {
+		int newXPosition = sf::Mouse::getPosition(window).x;
+		if (newXPosition > barBounds.left && newXPosition < barBounds.left + barBounds.width) {
+			sprite.setPosition(newXPosition, sprite.getPosition().y);
+		}
+	}
+};
+
+
+class slider {
+private:
+	float value;
+	bar sliderBar;
+	pointer sliderPointer;
+
+public:
+	slider(sf::RenderWindow& window, sf::Texture& texture, sf::Texture& texture2, float sliderX, float sliderY, float sliderWidth, float sliderHeight) {
+		sf::Vector2u windowSize = window.getSize();
+		int barX = windowSize.x * (sliderX + 0.070555 * sliderWidth);
+		int barY = windowSize.y * (sliderY + 0.212355 * sliderHeight);
+		int barWidth = 0.8929 * sliderWidth * windowSize.x;
+		int barHeight = 0.1482 * sliderHeight * windowSize.y;
+		sliderBar = bar(texture, barX, barY, barWidth, barHeight);
+		int pointerWidth = 0.03 * sliderWidth * windowSize.x;
+		sliderPointer = pointer(texture2, barX + barWidth / 2, barY + barHeight / 2, pointerWidth, pointerWidth);
+	};
+
+	void draw(sf::RenderWindow& window) {
+		update(window);
+		sliderBar.draw(window);
+		sliderPointer.draw(window);
+	};
+
+	void update(sf::RenderWindow& window) {
+		if (sliderBar.inBounds(window) && sf::Mouse::isButtonPressed(sf::Mouse::Left)) {
+			sliderPointer.movePointer(window, sliderBar.getBounds());
+		}
+	}
 };

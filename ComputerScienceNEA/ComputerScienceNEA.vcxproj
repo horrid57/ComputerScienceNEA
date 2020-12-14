@@ -148,6 +148,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Components.h" />
+    <ClInclude Include="guiElements.h" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="..\..\..\..\Desktop\blue.jpg" />

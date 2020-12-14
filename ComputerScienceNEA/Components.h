@@ -1,6 +1,8 @@
 #pragma once
 #include <SFML/Graphics.hpp>
 #include <iostream>
+#include <math.h>
+
 
 class Button {
 private:
@@ -113,7 +115,7 @@ public:
 	bool inBounds(sf::RenderWindow& window) {
 		sf::Vector2i mousePosition = sf::Mouse::getPosition(window);
 		sf::FloatRect bounds = sprite.getGlobalBounds();
-		if (mousePosition.x < bounds.left + bounds.width && mousePosition.x > bounds.width &&
+		if (mousePosition.x < bounds.left + bounds.width && mousePosition.x > bounds.left &&
 			mousePosition.y < bounds.top + bounds.height && mousePosition.y > bounds.top) {
 			return true;
 		}
@@ -149,6 +151,10 @@ public:
 			sprite.setPosition(newXPosition, sprite.getPosition().y);
 		}
 	}
+	
+	sf::Vector2f getPosition() {
+		return sprite.getPosition();
+	}
 };
 
 
@@ -157,6 +163,7 @@ private:
 	float value;
 	bar sliderBar;
 	pointer sliderPointer;
+	bool moving = false;
 
 public:
 	slider(sf::RenderWindow& window, sf::Texture& texture, sf::Texture& texture2, float sliderX, float sliderY, float sliderWidth, float sliderHeight) {
@@ -176,9 +183,22 @@ public:
 		sliderPointer.draw(window);
 	};
 
+	float getValue() {
+		sf::FloatRect barBounds = sliderBar.getBounds();
+		return roundf((sliderPointer.getPosition().x - barBounds.left) * 100 / barBounds.width) /100;
+	};
+
 	void update(sf::RenderWindow& window) {
 		if (sliderBar.inBounds(window) && sf::Mouse::isButtonPressed(sf::Mouse::Left)) {
+			moving = true;
+		};
+		if (moving) {
 			sliderPointer.movePointer(window, sliderBar.getBounds());
-		}
+			std::cout << getValue();
+			std::cout << "\n";
+		};
+		if (!sf::Mouse::isButtonPressed(sf::Mouse::Left)) {
+			moving = false;
+		};
 	}
 };

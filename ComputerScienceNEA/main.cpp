@@ -77,7 +77,7 @@ void settingsMenu(sf::RenderWindow& window) {
 int main()
 {
     sf::RenderWindow window(sf::VideoMode(1280, 720), "SFML works!");
-    window.setFramerateLimit(30);
+    window.setFramerateLimit(144);
 
     sf::Texture buttonOffTexture;
     buttonOffTexture.loadFromFile("blue.jpg");

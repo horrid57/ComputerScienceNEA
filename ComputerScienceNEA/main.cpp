@@ -18,7 +18,7 @@ void gameScreen(sf::RenderWindow& window) {
     }
 }
 
-void gameMenu(sf::RenderWindow& window) {
+void gameMenu() {
     while (window.isOpen()) {
         sf::Event event;
         while (window.pollEvent(event))
@@ -37,13 +37,115 @@ void gameMenu(sf::RenderWindow& window) {
         lengthLabel.draw(window);
         timerLabel.draw(window);
         gameStart.draw(window);
+        timerFive.draw(window);
+        timerTen.draw(window);
+        timerFifthteen.draw(window);
+        timerTwenty.draw(window);
+        timerOn.draw(window);
+        timerOff.draw(window);
+        left.draw(window);
+        right.draw(window);
+        classImage.draw(window);
+        classDescription.draw(window);
 
 
         if (menu.isPressed(window)) {
             return;
         }
         if (gameStart.isPressed(window)) {
+            std::cout << classNames[playerClass] << ", " << gameDifficulty << ", " << timerEnabled << ", " << timerLength;
             gameScreen(window);
+        }
+        difficultySlider.update(window);
+        gameDifficulty = difficultySlider.getValue();
+
+        if (left.isPressed(window)) {
+            playerClass--;
+            if (playerClass < 0) {
+                playerClass = classNames.size() - 1;
+            };
+            className.setText(classNames[playerClass]);
+            classDescription.setText(classDescriptions[playerClass]);
+            classImage.changeTexture(classImages[playerClass]);
+        }
+        else if (right.isPressed(window)) {
+            playerClass++;
+            if (playerClass > classNames.size() - 1) {
+                playerClass = 0;
+            };
+            className.setText(classNames[playerClass]); 
+            classDescription.setText(classDescriptions[playerClass]);
+            classImage.changeTexture(classImages[playerClass]);
+        };
+
+        if (timerFive.isPressed(window)) {
+            timerTen.setState(false);
+            timerFifthteen.setState(false);
+            timerTwenty.setState(false);
+            timerTen.updateTexture(buttonOnTexture, buttonOffTexture);
+            timerFifthteen.updateTexture(buttonOnTexture, buttonOffTexture);
+            timerTwenty.updateTexture(buttonOnTexture, buttonOffTexture);
+
+            timerFive.setState(true);
+            timerFive.updateTexture(buttonOnTexture, buttonOffTexture);
+
+            timerLength = 5;
+        }
+        else if (timerTen.isPressed(window)) {
+            timerFive.setState(false);
+            timerFifthteen.setState(false);
+            timerTwenty.setState(false);
+            timerFive.updateTexture(buttonOnTexture, buttonOffTexture);
+            timerFifthteen.updateTexture(buttonOnTexture, buttonOffTexture);
+            timerTwenty.updateTexture(buttonOnTexture, buttonOffTexture);
+
+            timerTen.setState(true);
+            timerTen.updateTexture(buttonOnTexture, buttonOffTexture);
+
+            timerLength = 10;
+        }
+        else if (timerFifthteen.isPressed(window)) {
+            timerFive.setState(false);
+            timerTen.setState(false);
+            timerTwenty.setState(false);
+            timerFive.updateTexture(buttonOnTexture, buttonOffTexture);
+            timerTen.updateTexture(buttonOnTexture, buttonOffTexture);
+            timerTwenty.updateTexture(buttonOnTexture, buttonOffTexture);
+
+            timerFifthteen.setState(true); 
+            timerFifthteen.updateTexture(buttonOnTexture, buttonOffTexture);
+
+            timerLength = 15;
+        }
+        else if (timerTwenty.isPressed(window)) {
+            timerFive.setState(false);
+            timerTen.setState(false);
+            timerFifthteen.setState(false);
+            timerFive.updateTexture(buttonOnTexture, buttonOffTexture);
+            timerTen.updateTexture(buttonOnTexture, buttonOffTexture);
+            timerFifthteen.updateTexture(buttonOnTexture, buttonOffTexture);
+
+            timerTwenty.setState(true);
+            timerTwenty.updateTexture(buttonOnTexture, buttonOffTexture);
+
+            timerLength = 20;
+        }
+
+        if (timerOff.isPressed(window)) {
+            timerOn.setState(false);
+            timerOn.updateTexture(buttonOnTexture, buttonOffTexture);
+            timerOff.setState(true);
+            timerOff.updateTexture(buttonOnTexture, buttonOffTexture);
+
+            timerEnabled = false;
+        }
+        else if (timerOn.isPressed(window)) {
+            timerOff.setState(false);
+            timerOff.updateTexture(buttonOnTexture, buttonOffTexture);
+            timerOn.setState(true);
+            timerOn.updateTexture(buttonOnTexture, buttonOffTexture);
+
+            timerEnabled = true;
         }
 
         window.display();
@@ -53,8 +155,7 @@ void gameMenu(sf::RenderWindow& window) {
     }
 }
 
-void settingsMenu(sf::RenderWindow& window) {
-
+void settingsMenu() {
     while (window.isOpen()) {
         sf::Event event;
         while (window.pollEvent(event))
@@ -65,6 +166,85 @@ void settingsMenu(sf::RenderWindow& window) {
 
         window.clear();
 
+        menu.draw(window);
+        settingsTitle.draw(window);
+        resolutionLabel.draw(window);
+        resolutionMin.draw(window);
+        resolutionMid.draw(window);
+        resolutionMax.draw(window);
+        fullscreen.draw(window);
+        refreshLabel.draw(window);
+        refreshSlider.draw(window);
+
+        refreshSlider.update(window);
+        framerate = refreshSlider.getValue();
+        window.setFramerateLimit(framerate);
+
+        if (resolutionMin.isPressed(window)) {
+            if (!resolutionMin.getState()) {
+                window.create(sf::VideoMode(1280, 720), windowName);
+                window.setView(sf::View(sf::FloatRect(0, 0, 1280, 720)));
+                initialiseElements();
+                resolutionMin.setState(true);
+                resolutionMid.setState(false);
+                resolutionMax.setState(false);
+                fullscreen.setState(false);
+                resolutionMin.updateTexture(buttonOnTexture, buttonOffTexture);
+                resolutionMid.updateTexture(buttonOnTexture, buttonOffTexture);
+                resolutionMax.updateTexture(buttonOnTexture, buttonOffTexture);
+                fullscreen.updateTexture(buttonOnTexture, buttonOffTexture);
+            }
+        }
+        else if (resolutionMid.isPressed(window)) {
+            if (!resolutionMid.getState()) {
+                window.create(sf::VideoMode(1920, 1080), windowName);
+                window.setView(sf::View(sf::FloatRect(0, 0, 1920, 1080)));
+                initialiseElements();
+                resolutionMin.setState(false);
+                resolutionMid.setState(true);
+                resolutionMax.setState(false);
+                fullscreen.setState(false);
+                resolutionMin.updateTexture(buttonOnTexture, buttonOffTexture);
+                resolutionMid.updateTexture(buttonOnTexture, buttonOffTexture);
+                resolutionMax.updateTexture(buttonOnTexture, buttonOffTexture);
+                fullscreen.updateTexture(buttonOnTexture, buttonOffTexture);
+            }
+        }
+        else if (resolutionMax.isPressed(window)) {
+            if (!resolutionMax.getState()) {
+                window.create(sf::VideoMode(2560, 1440), windowName);
+                window.setView(sf::View(sf::FloatRect(0, 0, 2560, 1440)));
+                initialiseElements();
+                resolutionMin.setState(false);
+                resolutionMid.setState(false);
+                resolutionMax.setState(true);
+                fullscreen.setState(false);
+                resolutionMin.updateTexture(buttonOnTexture, buttonOffTexture);
+                resolutionMid.updateTexture(buttonOnTexture, buttonOffTexture);
+                resolutionMax.updateTexture(buttonOnTexture, buttonOffTexture);
+                fullscreen.updateTexture(buttonOnTexture, buttonOffTexture);
+            }
+        }
+        else if (fullscreen.isPressed(window)) {
+            if (!fullscreen.getState()) {
+                window.create(sf::VideoMode::getDesktopMode(), windowName, sf::Style::Fullscreen);
+                window.setView(sf::View(sf::FloatRect(0, 0, sf::VideoMode::getDesktopMode().width, sf::VideoMode::getDesktopMode().height)));
+                initialiseElements();
+                resolutionMin.setState(false);
+                resolutionMid.setState(false);
+                resolutionMax.setState(false);
+                fullscreen.setState(true);
+                resolutionMin.updateTexture(buttonOnTexture, buttonOffTexture);
+                resolutionMid.updateTexture(buttonOnTexture, buttonOffTexture);
+                resolutionMax.updateTexture(buttonOnTexture, buttonOffTexture);
+                fullscreen.updateTexture(buttonOnTexture, buttonOffTexture);
+            }
+        }
+
+
+        if (menu.isPressed(window)) {
+            return;
+        }
 
         window.display();
         if (sf::Keyboard::isKeyPressed(sf::Keyboard::Escape)) {
@@ -73,29 +253,11 @@ void settingsMenu(sf::RenderWindow& window) {
     }
 }
 
+
 int main()
 {
-
     window.setFramerateLimit(144);
-
-    buttonOffTexture.loadFromFile("blue.jpg");
-    defaultTexture.loadFromFile("blue.jpg");
-    buttonOnTexture.loadFromFile("green.png");
-    arialRounded.loadFromFile("ARLRDBD.ttf");
-
-    mainStartButton = Button(window, buttonOffTexture, buttonOnTexture, false, "START", arialRounded, 0.334, 0.267, 0.313, 0.206);
-    tutorialButton = Button(window, buttonOffTexture, buttonOnTexture, false, "Tutorial", arialRounded, 0.378, 0.514, 0.227, 0.104);
-    settingsButton = Button(window, buttonOffTexture, buttonOnTexture, false, "Settings", arialRounded, 0.377, 0.659, 0.227, 0.087);
-    exitButton = Button(window, buttonOffTexture, buttonOnTexture, false, "Exit", arialRounded, 0.021, 0.877, 0.123, 0.095);
-
-    difficultySlider = Slider(window, buttonOnTexture, buttonOffTexture, 0.4, 0.3026, 0.591, 0.1577);
-    menu = Button(window, buttonOffTexture, buttonOnTexture, false, "Menu", arialRounded, 0.0129, 0.0211, 0.1026, 0.0795);
-    className = Label(window, defaultTexture, "[class name]", arialRounded, 0.1143, 0.2304, 0.1955, 0.0830);
-    customisationTitle = Label(window, defaultTexture, "Customise", arialRounded, 0.3688, 0.0152, 0.2323, 0.1111);
-    difficultyLabel = Label(window, defaultTexture, "Game Difficulty", arialRounded, 0.4935, 0.1988, 0.2016, 0.0807);
-    lengthLabel = Label(window, defaultTexture, "Game Length", arialRounded, 0.4935, 0.5216, 0.161, 0.0561);
-    timerLabel = Label(window, defaultTexture, "Timer", arialRounded, 0.4935, 0.7462, 0.1063, 0.0667);
-    gameStart = Button(window, buttonOffTexture, buttonOnTexture, false, "START", arialRounded, 0.7566, 0.8117, 0.2164, 0.1415);
+    initialiseElements();
 
     while (window.isOpen())
     {
@@ -112,13 +274,12 @@ int main()
         tutorialButton.draw(window);
         settingsButton.draw(window);
         exitButton.draw(window);
+
         if (mainStartButton.isPressed(window)) {
-            //button.toggleState();
-            mainStartButton.updateTexture();
-            gameMenu(window);
+            gameMenu();
         }
         else if (settingsButton.isPressed(window)) {
-            settingsMenu(window);
+            settingsMenu();
         }
         else if (exitButton.isPressed(window)) {
             return 1;

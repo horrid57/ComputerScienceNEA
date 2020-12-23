@@ -3,6 +3,29 @@
 #include <iostream>
 #include <math.h>
 
+class Image {
+public:
+	sf::Sprite sprite;
+
+	Image() { };
+
+	Image(sf::RenderWindow& window, sf::Texture& texture, float xPosition, float yPosition, float width, float height) {
+		sf::Vector2u windowSize = window.getSize();
+		sprite.setTexture(texture);
+		sprite.setPosition(xPosition * windowSize.x, yPosition * windowSize.y);
+		sf::FloatRect bounds = sprite.getLocalBounds();
+		sprite.setScale((width * windowSize.x) / bounds.width, (height * windowSize.y) / bounds.height);
+	};
+
+	void changeTexture(sf::Texture& texture) {
+		sprite.setTexture(texture);
+	};
+
+	void draw(sf::RenderWindow& window) {
+		window.draw(sprite);
+	};
+};
+
 class Label {
 public:
 	sf::Sprite sprite;
@@ -14,16 +37,19 @@ public:
 	Label(sf::RenderWindow& window, sf::Texture& texture, std::string message, sf::Font& messageFont, float buttonX, float buttonY, float buttonWidth, float buttonHeight) {
 		text.setString(message);
 		text.setFont(messageFont);
-		text.setCharacterSize(90);
+		text.setCharacterSize(300);
 
 		sf::Vector2u windowSize = window.getSize();
 		sprite.setTexture(texture);
 		sprite.setPosition(buttonX * windowSize.x, buttonY * windowSize.y);
 		sf::FloatRect bounds = sprite.getLocalBounds();
 		sprite.setScale((buttonWidth * windowSize.x) / bounds.width, (buttonHeight * windowSize.y) / bounds.height);
-		sf::FloatRect textBounds = text.getGlobalBounds();
+		positionText();
+	};
 
-		bounds = sprite.getGlobalBounds();
+	void positionText() {
+		sf::FloatRect bounds = sprite.getGlobalBounds();
+		sf::FloatRect textBounds = text.getGlobalBounds();
 		if (bounds.height / textBounds.height <= bounds.width / textBounds.width) {
 			text.setScale((bounds.height / textBounds.height) * 0.90, (bounds.height / textBounds.height) * 0.90);
 		}
@@ -31,8 +57,18 @@ public:
 			text.setScale((bounds.width / textBounds.width) * 0.90, (bounds.width / textBounds.width) * 0.90);
 		}
 
+		textBounds = text.getLocalBounds();
+		text.setOrigin(textBounds.left + textBounds.width / 2, textBounds.top + textBounds.height / 2);
+
+		bounds = sprite.getGlobalBounds();
 		textBounds = text.getGlobalBounds();
-		text.setPosition((buttonX * windowSize.x) + (bounds.width - textBounds.width) / 2, (buttonY * windowSize.y) + (bounds.height - textBounds.height) / 2);
+		text.setPosition(bounds.left + (bounds.width / 2), bounds.top + (bounds.height / 2));
+	};
+
+	void setText(std::string message) {
+		text.setScale(1, 1);
+		text.setString(message);
+		positionText();
 	};
 
 	void draw(sf::RenderWindow& window) {
@@ -45,8 +81,6 @@ class Button {
 public:
 	bool enabled = false;
 	sf::Sprite sprite;
-	sf::Texture disabledTexture;
-	sf::Texture enabledTexture;
 	sf::Text text;
 	bool mouseDown = false;
 
@@ -55,13 +89,16 @@ public:
 	Button(sf::RenderWindow& window, sf::Texture& buttonOffTexture, sf::Texture& buttonOnTexture, bool state, std::string message, sf::Font& messageFont, float buttonX, float buttonY, float buttonWidth, float buttonHeight) {
 		text.setString(message);
 		text.setFont(messageFont);
-		text.setCharacterSize(90);
+		text.setCharacterSize(300);
 		enabled = state;
-		disabledTexture = buttonOffTexture;
-		enabledTexture = buttonOnTexture;
 
 		sf::Vector2u windowSize = window.getSize();
-		sprite.setTexture(buttonOffTexture);
+		if (enabled) {
+			sprite.setTexture(buttonOnTexture);
+		}
+		else {
+			sprite.setTexture(buttonOffTexture);
+		}
 		sprite.setPosition(buttonX * windowSize.x, buttonY * windowSize.y);
 		sf::FloatRect bounds = sprite.getLocalBounds();
 		sprite.setScale((buttonWidth * windowSize.x) / bounds.width, (buttonHeight * windowSize.y) / bounds.height);
@@ -75,8 +112,12 @@ public:
 			text.setScale((bounds.width / textBounds.width) * 0.90, (bounds.width / textBounds.width) * 0.90);
 		}
 
+		textBounds = text.getLocalBounds();
+		text.setOrigin(textBounds.left + textBounds.width / 2, textBounds.top + textBounds.height / 2);
+
+		bounds = sprite.getGlobalBounds();
 		textBounds = text.getGlobalBounds();
-		text.setPosition((buttonX * windowSize.x) + (bounds.width - textBounds.width) / 2, (buttonY * windowSize.y) + (bounds.height - textBounds.height) / 2);
+		text.setPosition((buttonX * windowSize.x) + (bounds.width / 2), (buttonY * windowSize.y) + (bounds.height / 2));
 	};
 
 	bool inBounds(sf::RenderWindow& window) {
@@ -122,14 +163,17 @@ public:
 		}
 	};
 
-	void updateTexture() {
+	void updateTexture(sf::Texture& buttonOnTexture, sf::Texture& buttonOffTexture) {
 		if (enabled) {
-			sprite.setTexture(enabledTexture);
+			sprite.setTexture(buttonOnTexture);
 		}
 		else {
-			sprite.setTexture(disabledTexture);
+			sprite.setTexture(buttonOffTexture);
 		}
+	};
 
+	bool getState() {
+		return enabled;
 	};
 };
 
@@ -224,23 +268,32 @@ private:
 	Bar sliderBar;
 	Pointer sliderPointer;
 	bool moving = false;
+	float minimumValue = 0;
+	float maximumValue = 1;
 
 public:
 	Slider() { };
 
-	Slider(sf::RenderWindow& window, sf::Texture& texture, sf::Texture& texture2, float sliderX, float sliderY, float sliderWidth, float sliderHeight) {
+	Slider(sf::RenderWindow& window, sf::Texture& texture, sf::Texture& texture2, float minValue, float maxValue, float initialValue, float sliderX, float sliderY, float sliderWidth, float sliderHeight) {
+		minimumValue = minValue;
+		maximumValue = maxValue;
 		sf::Vector2u windowSize = window.getSize();
 		int barX = windowSize.x * (sliderX + 0.070555 * sliderWidth);
 		int barY = windowSize.y * (sliderY + 0.212355 * sliderHeight);
 		int barWidth = 0.8929 * sliderWidth * windowSize.x;
 		int barHeight = 0.1482 * sliderHeight * windowSize.y;
 		sliderBar = Bar(texture, barX, barY, barWidth, barHeight);
+		if (initialValue < minimumValue) {
+			initialValue = minimumValue;
+		}
+		else if (initialValue > maximumValue) {
+			initialValue = maximumValue;
+		};
 		int pointerWidth = 0.03 * sliderWidth * windowSize.x;
-		sliderPointer = Pointer(texture2, barX + barWidth / 2, barY + barHeight / 2, pointerWidth, pointerWidth);
+		sliderPointer = Pointer(texture2, barX + barWidth * ((initialValue - minimumValue) / (maximumValue - minimumValue)), barY + barHeight / 2, pointerWidth, pointerWidth);
 	};
 
 	void draw(sf::RenderWindow& window) {
-		update(window);
 		sliderBar.draw(window);
 		sliderPointer.draw(window);
 	};
@@ -248,7 +301,7 @@ public:
 	float getValue() {
 		sf::FloatRect barBounds = sliderBar.getBounds();
 		value = roundf((sliderPointer.getPosition().x - barBounds.left) * 100 / barBounds.width) /100;
-		return value;
+		return minimumValue + value * (maximumValue - minimumValue);
 	};
 
 	void update(sf::RenderWindow& window) {
@@ -257,8 +310,6 @@ public:
 		};
 		if (moving) {
 			sliderPointer.movePointer(window, sliderBar.getBounds());
-			std::cout << getValue();
-			std::cout << "\n";
 		};
 		if (!sf::Mouse::isButtonPressed(sf::Mouse::Left)) {
 			moving = false;

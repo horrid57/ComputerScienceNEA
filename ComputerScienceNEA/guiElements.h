@@ -11,8 +11,12 @@ sf::Font arialRounded;
 sf::Texture buttonOnTexture;
 sf::Texture buttonOffTexture;
 sf::Texture defaultTexture;
+sf::Texture wallTexture;
 
 // Variables
+int roomHeight = 50;
+int roomWidth = 100;
+int wallThickness = 10;
 float framerate = 60;
 float gameDifficulty = 0.2;
 int timerLength = 10;
@@ -69,6 +73,7 @@ void initialiseElements() {
     defaultTexture.loadFromFile("blue.jpg");
     buttonOnTexture.loadFromFile("green.png");
     arialRounded.loadFromFile("ARLRDBD.ttf");
+    wallTexture.loadFromFile("brown.jpg");
 
     classImages = { buttonOnTexture, buttonOffTexture, defaultTexture };
 

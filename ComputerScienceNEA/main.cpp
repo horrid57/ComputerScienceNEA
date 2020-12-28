@@ -2,8 +2,69 @@
 #include "Components.h"
 #include "guiElements.h"
 #include <iostream>
+#include <stdlib.h>
+
+bool contains(std::vector<sf::Vector2i>& vector, sf::Vector2i value) {
+    for (int i = 0; i < vector.size(); i++) {
+        if (vector[i] == value) {
+            return true;
+        }
+    }
+    return false;
+};
+
+std::vector<Room> generateLevel() {
+    std::vector<Room> rooms;
+    std::vector<sf::Vector2i> positions = { sf::Vector2i(200, 400) };
+
+    int i = 0;
+    while (i < timerLength) {
+        int randInt = rand() % 4;
+        sf::Vector2i nextPosition;
+        sf::Vector2i lastPosition = positions.back();
+        std::cout << i << " " << randInt << " " << lastPosition.x << " " << lastPosition.y << "\n";
+        switch (randInt) {
+        case 0:
+            nextPosition = sf::Vector2i(lastPosition.x - roomWidth, lastPosition.y);
+            if (!contains(positions, nextPosition)) {
+                positions.push_back(nextPosition);
+                i++;
+            }
+            break;
+        case 1:
+            nextPosition = sf::Vector2i(lastPosition.x, lastPosition.y - roomHeight);
+            if (!contains(positions, nextPosition)) {
+                positions.push_back(nextPosition);
+                i++;
+            }
+            break;
+        case 2:
+            nextPosition = sf::Vector2i(lastPosition.x + roomWidth, lastPosition.y);
+            if (!contains(positions, nextPosition)) {
+                positions.push_back(nextPosition);
+                i++;
+            }
+            break;
+        case 3:
+            nextPosition = sf::Vector2i(lastPosition.x, lastPosition.y + roomHeight);
+            if (!contains(positions, nextPosition)) {
+                positions.push_back(nextPosition);
+                i++;
+            }
+            break;
+        };
+    }
+
+    for (int i = 0; i < positions.size(); i++) {
+        rooms.push_back(Room(wallTexture, positions[i].x, positions[i].y, roomWidth, roomHeight, wallThickness));
+    };
+
+    return rooms;
+}
+
 
 void gameScreen(sf::RenderWindow& window) {
+    std::vector<Room> rooms = generateLevel();
     while (window.isOpen()) {
         sf::Event event;
         while (window.pollEvent(event))
@@ -13,6 +74,14 @@ void gameScreen(sf::RenderWindow& window) {
 
             window.clear();
 
+            for (int i = 0; i < rooms.size(); i++) {
+                rooms[i].draw(window);
+            };
+
+            if (sf::Keyboard::isKeyPressed(sf::Keyboard::H)) {
+                rooms = generateLevel();
+            }
+            
             window.display();
         }
     }
@@ -53,7 +122,7 @@ void gameMenu() {
             return;
         }
         if (gameStart.isPressed(window)) {
-            std::cout << classNames[playerClass] << ", " << gameDifficulty << ", " << timerEnabled << ", " << timerLength;
+            std::cout << classNames[playerClass] << ", " << gameDifficulty << ", " << timerEnabled << ", " << timerLength << "\n";
             gameScreen(window);
         }
         difficultySlider.update(window);
@@ -256,8 +325,8 @@ void settingsMenu() {
 
 int main()
 {
-    window.setFramerateLimit(144);
     initialiseElements();
+    window.setView(sf::View(sf::Vector2f(640, 360), sf::Vector2f(1280, 720)));
 
     while (window.isOpen())
     {

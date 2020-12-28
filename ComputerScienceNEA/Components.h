@@ -3,6 +3,50 @@
 #include <iostream>
 #include <math.h>
 
+class Wall {
+public:
+	sf::Sprite sprite;
+
+	Wall() { };
+
+	Wall(sf::Texture& texture, int xPosition, int yPosition, int width, int height) {
+		sprite.setPosition(xPosition, yPosition);
+		sprite.setTexture(texture);
+		sf::FloatRect bounds = sprite.getGlobalBounds();
+		sprite.setScale(width / bounds.width, height / bounds.height);
+	};
+
+	sf::FloatRect getBounds() {
+		return sprite.getGlobalBounds();
+	};
+
+	void draw(sf::RenderWindow& window) {
+		window.draw(sprite);
+	};
+};
+
+class Room {
+public:
+	std::vector<Wall> walls;
+
+	Room() { };
+
+	Room(sf::Texture& wallTexture, int xPosition, int yPosition, int width, int height, int wallThickness) {
+		walls = {
+			Wall(wallTexture, xPosition, yPosition, width, wallThickness),
+			Wall(wallTexture, xPosition, yPosition + wallThickness, wallThickness, height - (2 * wallThickness)),
+			Wall(wallTexture, xPosition, yPosition + height - wallThickness, width, wallThickness),
+			Wall(wallTexture, xPosition + width - wallThickness, yPosition + wallThickness, wallThickness, height - (2 * wallThickness))
+		};
+	};
+
+	void draw(sf::RenderWindow& window) {
+		for (int i = 0; i < walls.size(); i++) {
+			walls[i].draw(window);
+		};
+	}
+};
+
 class Image {
 public:
 	sf::Sprite sprite;

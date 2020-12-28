@@ -26,28 +26,44 @@ std::vector<Room> generateLevel() {
         switch (randInt) {
         case 0:
             nextPosition = sf::Vector2i(lastPosition.x - roomWidth, lastPosition.y);
-            if (!contains(positions, nextPosition)) {
+            if (!contains(positions, nextPosition) &&
+                !contains(positions, sf::Vector2i(nextPosition.x - roomWidth, nextPosition.y)) &&
+                !contains(positions, sf::Vector2i(nextPosition.x, nextPosition.y + roomHeight)) &&
+                !contains(positions, sf::Vector2i(nextPosition.x, nextPosition.y - roomHeight))
+                ) {
                 positions.push_back(nextPosition);
                 i++;
             }
             break;
         case 1:
             nextPosition = sf::Vector2i(lastPosition.x, lastPosition.y - roomHeight);
-            if (!contains(positions, nextPosition)) {
+            if (!contains(positions, nextPosition) &&
+                !contains(positions, sf::Vector2i(nextPosition.x - roomWidth, nextPosition.y)) &&
+                !contains(positions, sf::Vector2i(nextPosition.x + roomWidth, nextPosition.y)) &&
+                !contains(positions, sf::Vector2i(nextPosition.x, nextPosition.y - roomHeight))
+                ) {
                 positions.push_back(nextPosition);
                 i++;
             }
             break;
         case 2:
             nextPosition = sf::Vector2i(lastPosition.x + roomWidth, lastPosition.y);
-            if (!contains(positions, nextPosition)) {
+            if (!contains(positions, nextPosition) &&
+                !contains(positions, sf::Vector2i(nextPosition.x + roomWidth, nextPosition.y)) &&
+                !contains(positions, sf::Vector2i(nextPosition.x, nextPosition.y + roomHeight)) &&
+                !contains(positions, sf::Vector2i(nextPosition.x, nextPosition.y - roomHeight))
+                ) {
                 positions.push_back(nextPosition);
                 i++;
             }
             break;
         case 3:
             nextPosition = sf::Vector2i(lastPosition.x, lastPosition.y + roomHeight);
-            if (!contains(positions, nextPosition)) {
+            if (!contains(positions, nextPosition) &&
+                !contains(positions, sf::Vector2i(nextPosition.x - roomWidth, nextPosition.y)) &&
+                !contains(positions, sf::Vector2i(nextPosition.x + roomWidth, nextPosition.y)) &&
+                !contains(positions, sf::Vector2i(nextPosition.x, nextPosition.y + roomHeight))
+                ) {
                 positions.push_back(nextPosition);
                 i++;
             }
@@ -61,6 +77,7 @@ std::vector<Room> generateLevel() {
 
     return rooms;
 }
+
 
 
 void gameScreen(sf::RenderWindow& window) {

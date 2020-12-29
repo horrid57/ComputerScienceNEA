@@ -23,6 +23,10 @@ public:
 	void draw(sf::RenderWindow& window) {
 		window.draw(sprite);
 	};
+
+	bool checkCollision(sf::FloatRect entity) {
+		return sprite.getGlobalBounds().intersects(entity);
+	}
 };
 
 class Room {
@@ -44,7 +48,83 @@ public:
 		for (int i = 0; i < walls.size(); i++) {
 			walls[i].draw(window);
 		};
-	}
+	};
+
+	bool checkCollisions(sf::FloatRect entity) {
+		for (int i = 0; i < walls.size(); i++) {
+			if (walls[i].checkCollision(entity)) {
+				return true;
+			}
+		};
+		return false;
+	};
+};
+
+class Player {
+public:
+	sf::Sprite sprite;
+	int x = 0;
+	int y = 0;
+	int speed = 0;
+	int width = 0;
+	int height = 0;
+
+	Player() { };
+
+	Player(sf::Texture& texture, int xPosition, int yPosition, int playerWidth, int playerHeight, int playerSpeed, int maxHealth) {
+		x = xPosition;
+		y = yPosition;
+		width = playerWidth;
+		height = playerHeight;
+		speed = playerSpeed;
+		sprite.setTexture(texture);
+		sf::FloatRect bounds = sprite.getGlobalBounds();
+		sprite.setScale(width / bounds.width, height / bounds.height);
+		sprite.setPosition(x, y);
+	};
+
+	void move(std::vector<Room>& rooms, float speedScale) {
+		int tempY = y;
+		int tempX = x;
+		bool keyPressed = false;
+		if (sf::Keyboard::isKeyPressed(sf::Keyboard::W)) {
+			tempY -= speed * speedScale;
+			keyPressed = true;
+		}
+		if (sf::Keyboard::isKeyPressed(sf::Keyboard::S)) {
+			tempY += speed * speedScale;
+			keyPressed = true;
+		}
+		if (sf::Keyboard::isKeyPressed(sf::Keyboard::A)) {
+			tempX -= speed * speedScale;
+			keyPressed = true;
+		}
+		if (sf::Keyboard::isKeyPressed(sf::Keyboard::D)) {
+			tempX += speed * speedScale;
+			keyPressed = true;
+		}
+		if (keyPressed) {
+			bool collided = false;
+			/*for (int i = 0; i < rooms.size(); i++) {
+				if (rooms[i].checkCollisions(sf::FloatRect(tempX, tempY, width, height))) {
+					collided = true;
+				};
+			};*/
+			if (!collided) {
+				x = tempX;
+				y = tempY;
+			}
+			sprite.setPosition(x, y);
+		}
+	};
+
+	sf::FloatRect getGlobalBounds() {
+		return sprite.getGlobalBounds();
+	};
+
+	void draw(sf::RenderWindow& window) {
+		window.draw(sprite);
+	};
 };
 
 class Image {

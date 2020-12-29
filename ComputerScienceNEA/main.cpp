@@ -3,6 +3,7 @@
 #include "guiElements.h"
 #include <iostream>
 #include <stdlib.h>
+#include <chrono>
 
 bool contains(std::vector<sf::Vector2i>& vector, sf::Vector2i value) {
     for (int i = 0; i < vector.size(); i++) {
@@ -18,11 +19,13 @@ std::vector<Room> generateLevel() {
     std::vector<sf::Vector2i> positions = { sf::Vector2i(200, 400) };
 
     int i = 0;
+    int attempts = 0;
+    int timesStuck = 0;
     while (i < timerLength) {
         int randInt = rand() % 4;
         sf::Vector2i nextPosition;
         sf::Vector2i lastPosition = positions.back();
-        std::cout << i << " " << randInt << " " << lastPosition.x << " " << lastPosition.y << "\n";
+        //std::cout << i << " " << randInt << " " << lastPosition.x << " " << lastPosition.y << "\n";
         switch (randInt) {
         case 0:
             nextPosition = sf::Vector2i(lastPosition.x - roomWidth, lastPosition.y);
@@ -33,6 +36,10 @@ std::vector<Room> generateLevel() {
                 ) {
                 positions.push_back(nextPosition);
                 i++;
+                attempts = 0;
+            }
+            else {
+                attempts++;
             }
             break;
         case 1:
@@ -44,6 +51,10 @@ std::vector<Room> generateLevel() {
                 ) {
                 positions.push_back(nextPosition);
                 i++;
+                attempts = 0;
+            }
+            else {
+                attempts++;
             }
             break;
         case 2:
@@ -55,6 +66,10 @@ std::vector<Room> generateLevel() {
                 ) {
                 positions.push_back(nextPosition);
                 i++;
+                attempts = 0;
+            }
+            else {
+                attempts++;
             }
             break;
         case 3:
@@ -66,9 +81,32 @@ std::vector<Room> generateLevel() {
                 ) {
                 positions.push_back(nextPosition);
                 i++;
+                attempts = 0;
+            }
+            else {
+                attempts++;
             }
             break;
         };
+        /* If there are too many attempts made with no progress made it can be assumed that the last room is in a 
+        * postion where it cannot progress in any of the three directions without the room being a neighbour to two
+        * or more rooms.
+        * Removing the last room allows the program to try and place a room that won't get it stuck.
+        * 
+        * There may be an issue in extreme cases where the program digs itself into a hole where the one it goes back
+        * to only has one place it can put a room.
+        * 
+        * Addition of timesStuck should prevent this from happening completely.
+        * 
+        */
+        if (attempts > 50) {
+            timesStuck++;
+            std::cout << timesStuck;
+            if (timesStuck >= positions.size()) {
+                timesStuck = positions.size();
+            };
+            positions.erase(positions.end() - timesStuck, positions.end() - 1);
+        }
     }
 
     for (int i = 0; i < positions.size(); i++) {
@@ -78,14 +116,16 @@ std::vector<Room> generateLevel() {
     return rooms;
 }
 
-
-
 void gameScreen(sf::RenderWindow& window) {
+    long initialTime;
+    long endTime;
     std::vector<Room> rooms = generateLevel();
+    Player player = Player(buttonOffTexture, 300, 500, 50, 50, 60, 5);
     while (window.isOpen()) {
         sf::Event event;
         while (window.pollEvent(event))
         {
+            initialTime = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
             if (event.type == sf::Event::Closed)
                 window.close();
 
@@ -94,12 +134,17 @@ void gameScreen(sf::RenderWindow& window) {
             for (int i = 0; i < rooms.size(); i++) {
                 rooms[i].draw(window);
             };
+            player.move(rooms, (float)timeForLastFrame / 1000000);
 
             if (sf::Keyboard::isKeyPressed(sf::Keyboard::H)) {
                 rooms = generateLevel();
             }
-            
+            player.draw(window);
+
             window.display();
+            endTime = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+            timeForLastFrame = endTime - initialTime;
+            std::cout << timeForLastFrame << "\n";
         }
     }
 }
@@ -344,6 +389,7 @@ int main()
 {
     initialiseElements();
     window.setView(sf::View(sf::Vector2f(640, 360), sf::Vector2f(1280, 720)));
+    window.setFramerateLimit(framerate);
 
     while (window.isOpen())
     {

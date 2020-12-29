@@ -6,6 +6,8 @@ std::string windowName = "Game Window";
 
 sf::RenderWindow window(sf::VideoMode(1280, 720), windowName, sf::Style::Titlebar | sf::Style::Close);
 
+class Room;
+
 // Default Elements
 sf::Font arialRounded;
 sf::Texture buttonOnTexture;
@@ -14,9 +16,10 @@ sf::Texture defaultTexture;
 sf::Texture wallTexture;
 
 // Variables
-int roomHeight = 50;
-int roomWidth = 100;
-int wallThickness = 10;
+long timeForLastFrame = 0;
+int roomHeight = 800;
+int roomWidth = 1400;
+int wallThickness = 6;
 float framerate = 60;
 float gameDifficulty = 0.2;
 int timerLength = 10;

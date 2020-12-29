@@ -68,6 +68,10 @@ public:
 	int speed = 0;
 	int width = 0;
 	int height = 0;
+	int tempY = y;
+	int tempX = x;
+	bool keyPressed = false;
+	bool collided = false;
 
 	Player() { };
 
@@ -84,37 +88,41 @@ public:
 	};
 
 	void move(std::vector<Room>& rooms, float speedScale) {
-		int tempY = y;
-		int tempX = x;
-		bool keyPressed = false;
+		keyPressed = false;
+		tempX = x;
+		tempY = y;
 		if (sf::Keyboard::isKeyPressed(sf::Keyboard::W)) {
-			tempY -= speed * speedScale;
+			tempY -= (speed * speedScale);
 			keyPressed = true;
+			std::cout << "w\n";
 		}
 		if (sf::Keyboard::isKeyPressed(sf::Keyboard::S)) {
-			tempY += speed * speedScale;
+			tempY += (speed * speedScale);
 			keyPressed = true;
+			std::cout << "s\n";
 		}
 		if (sf::Keyboard::isKeyPressed(sf::Keyboard::A)) {
-			tempX -= speed * speedScale;
+			tempX -= (speed * speedScale);
 			keyPressed = true;
+			std::cout << "a\n";
 		}
 		if (sf::Keyboard::isKeyPressed(sf::Keyboard::D)) {
-			tempX += speed * speedScale;
+			tempX += (speed * speedScale);
 			keyPressed = true;
+			std::cout << "d\n";
 		}
 		if (keyPressed) {
-			bool collided = false;
-			/*for (int i = 0; i < rooms.size(); i++) {
+			collided = false;
+			for (int i = 0; i < rooms.size(); i++) {
 				if (rooms[i].checkCollisions(sf::FloatRect(tempX, tempY, width, height))) {
 					collided = true;
 				};
-			};*/
+			};
 			if (!collided) {
 				x = tempX;
 				y = tempY;
+				sprite.setPosition(x, y);
 			}
-			sprite.setPosition(x, y);
 		}
 	};
 

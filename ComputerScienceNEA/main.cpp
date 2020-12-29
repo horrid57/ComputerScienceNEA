@@ -4,6 +4,7 @@
 #include <iostream>
 #include <stdlib.h>
 #include <chrono>
+#include <thread>
 
 bool contains(std::vector<sf::Vector2i>& vector, sf::Vector2i value) {
     for (int i = 0; i < vector.size(); i++) {
@@ -117,35 +118,35 @@ std::vector<Room> generateLevel() {
 }
 
 void gameScreen(sf::RenderWindow& window) {
-    long initialTime;
-    long endTime;
+    long initialTime = 0;
+    long endTime = 0;
     std::vector<Room> rooms = generateLevel();
-    Player player = Player(buttonOffTexture, 300, 500, 50, 50, 60, 5);
+    Player player = Player(buttonOffTexture, 300, 500, 50, 50, 200, 5);
     while (window.isOpen()) {
         sf::Event event;
         while (window.pollEvent(event))
         {
-            initialTime = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
-            if (event.type == sf::Event::Closed)
+            if (event.type == sf::Event::Closed) {
                 window.close();
-
-            window.clear();
-
-            for (int i = 0; i < rooms.size(); i++) {
-                rooms[i].draw(window);
             };
-            player.move(rooms, (float)timeForLastFrame / 1000000);
-
-            if (sf::Keyboard::isKeyPressed(sf::Keyboard::H)) {
-                rooms = generateLevel();
-            }
-            player.draw(window);
-
-            window.display();
-            endTime = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
-            timeForLastFrame = endTime - initialTime;
-            std::cout << timeForLastFrame << "\n";
         }
+        initialTime = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+        window.clear();
+
+        for (int i = 0; i < rooms.size(); i++) {
+            rooms[i].draw(window);
+        };
+        player.move(rooms, (float)timeForLastFrame / 1000000);
+
+        if (sf::Keyboard::isKeyPressed(sf::Keyboard::H)) {
+            rooms = generateLevel();
+        }
+
+        player.draw(window);
+
+        window.display();
+        endTime = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+        timeForLastFrame = endTime - initialTime;
     }
 }
 
@@ -390,6 +391,7 @@ int main()
     initialiseElements();
     window.setView(sf::View(sf::Vector2f(640, 360), sf::Vector2f(1280, 720)));
     window.setFramerateLimit(framerate);
+    window.setVerticalSyncEnabled(false);
 
     while (window.isOpen())
     {

@@ -29,24 +29,104 @@ public:
 	}
 };
 
+class Door {
+public:
+	sf::Sprite sprite;
+	bool opened = false;
+
+	Door() { };
+
+	Door(sf::Texture& texture, int xPosition, int yPosition, int width, int height) {
+		sprite.setPosition(xPosition, yPosition);
+		sprite.setTexture(texture);
+		sf::FloatRect bounds = sprite.getGlobalBounds();
+		sprite.setScale(width / bounds.width, height / bounds.height);
+	};
+
+	sf::FloatRect getBounds() {
+		return sprite.getGlobalBounds();
+	};
+
+	void draw(sf::RenderWindow& window) {
+		window.draw(sprite);
+	};
+
+	bool checkCollision(sf::FloatRect entity) {
+		return sprite.getGlobalBounds().intersects(entity);
+	};
+
+	void setOpen(bool state) {
+		opened = state;
+	};
+
+	bool isOpened() {
+		return opened;
+	};
+};
+
 class Room {
 public:
 	std::vector<Wall> walls;
+	Door door;
 
 	Room() { };
 
-	Room(sf::Texture& wallTexture, int xPosition, int yPosition, int width, int height, int wallThickness) {
-		walls = {
-			Wall(wallTexture, xPosition, yPosition, width, wallThickness),
-			Wall(wallTexture, xPosition, yPosition + wallThickness, wallThickness, height - (2 * wallThickness)),
-			Wall(wallTexture, xPosition, yPosition + height - wallThickness, width, wallThickness),
-			Wall(wallTexture, xPosition + width - wallThickness, yPosition + wallThickness, wallThickness, height - (2 * wallThickness))
-		};
+	Room(sf::Texture& wallTexture, sf::Texture& doorTexture, int xPosition, int yPosition, int width, int height, int wallThickness, std::string firstHole, std::string secondHole = "") {
+		if (firstHole == "Top" || secondHole == "Top") {
+			walls.push_back(Wall(wallTexture, xPosition, yPosition, width * 0.3, wallThickness));
+			walls.push_back(Wall(wallTexture, xPosition + width * 0.7, yPosition, width * 0.3, wallThickness));
+		}
+		else {
+			walls.push_back(Wall(wallTexture, xPosition, yPosition, width, wallThickness));
+		}
+		if (firstHole == "Bottom" || secondHole == "Bottom") {
+			walls.push_back(Wall(wallTexture, xPosition, yPosition + height - wallThickness, width * 0.3, wallThickness));
+			walls.push_back(Wall(wallTexture, xPosition + width * 0.7, yPosition + height - wallThickness, width * 0.3, wallThickness));
+		}
+		else {
+			walls.push_back(Wall(wallTexture, xPosition, yPosition + height - wallThickness, width, wallThickness));
+		}
+
+
+		if (firstHole == "Left" || secondHole == "Left") {
+			walls.push_back(Wall(wallTexture, xPosition, yPosition + wallThickness, wallThickness, (height - (2 * wallThickness)) * 0.3));
+			walls.push_back(Wall(wallTexture, xPosition, yPosition + wallThickness + (height - (2 * wallThickness)) * 0.7, wallThickness, (height - (2 * wallThickness)) * 0.3));
+		}
+		else {
+			walls.push_back(Wall(wallTexture, xPosition, yPosition + wallThickness, wallThickness, height - (2 * wallThickness)));
+		}
+		if (firstHole == "Right" || secondHole == "Right") {
+			walls.push_back(Wall(wallTexture, xPosition + width - wallThickness, yPosition + wallThickness, wallThickness, (height - (2 * wallThickness)) * 0.3));
+			walls.push_back(Wall(wallTexture, xPosition + width - wallThickness, yPosition + wallThickness + (height - (2 * wallThickness)) * 0.7, wallThickness, (height - (2 * wallThickness)) * 0.3));
+		}
+		else {
+			walls.push_back(Wall(wallTexture, xPosition + width - wallThickness, yPosition + wallThickness, wallThickness, height - (2 * wallThickness)));
+		}
+
+
+
+		if (firstHole == "Top") {
+			door = Door(doorTexture, xPosition  + width * 0.3, yPosition - wallThickness, width * 0.4, wallThickness * 2);
+		}
+		else if (firstHole == "Bottom") {
+			door = Door(doorTexture, xPosition + width * 0.3, yPosition - wallThickness + height, width * 0.4, wallThickness * 2);
+		}
+
+
+		else if (firstHole == "Left") {
+			door = Door(doorTexture, xPosition - wallThickness, yPosition + wallThickness + (height - 2 * wallThickness) * 0.3, wallThickness * 2, (height - 2 * wallThickness) * 0.4);
+		}
+		else if (firstHole == "Right") {
+			door = Door(doorTexture, xPosition + width, yPosition - wallThickness + height * 0.3, wallThickness * 2, height * 0.4);
+		}
 	};
 
 	void draw(sf::RenderWindow& window) {
 		for (int i = 0; i < walls.size(); i++) {
 			walls[i].draw(window);
+		};
+		if (!door.isOpened()) {
+			door.draw(window);
 		};
 	};
 
@@ -58,6 +138,16 @@ public:
 		};
 		return false;
 	};
+
+	bool checkDoorCollisions(sf::FloatRect entity, bool open = false) {
+		if (!door.isOpened() && door.checkCollision(entity)) {
+			if (open) {
+				door.setOpen(true);
+			};
+			return true;
+		};
+		return false;
+	}
 };
 
 class Player {
@@ -94,27 +184,23 @@ public:
 		if (sf::Keyboard::isKeyPressed(sf::Keyboard::W)) {
 			tempY -= (speed * speedScale);
 			keyPressed = true;
-			std::cout << "w\n";
 		}
 		if (sf::Keyboard::isKeyPressed(sf::Keyboard::S)) {
 			tempY += (speed * speedScale);
 			keyPressed = true;
-			std::cout << "s\n";
 		}
 		if (sf::Keyboard::isKeyPressed(sf::Keyboard::A)) {
 			tempX -= (speed * speedScale);
 			keyPressed = true;
-			std::cout << "a\n";
 		}
 		if (sf::Keyboard::isKeyPressed(sf::Keyboard::D)) {
 			tempX += (speed * speedScale);
 			keyPressed = true;
-			std::cout << "d\n";
 		}
 		if (keyPressed) {
 			collided = false;
 			for (int i = 0; i < rooms.size(); i++) {
-				if (rooms[i].checkCollisions(sf::FloatRect(tempX, tempY, width, height))) {
+				if (rooms[i].checkCollisions(sf::FloatRect(tempX, tempY, width, height)) || rooms[i].checkDoorCollisions(sf::FloatRect(tempX, tempY, width, height), true)) {
 					collided = true;
 				};
 			};
@@ -132,6 +218,10 @@ public:
 
 	void draw(sf::RenderWindow& window) {
 		window.draw(sprite);
+	};
+
+	sf::Vector2f getCentre() {
+		return(sf::Vector2f(x + width / 2, y + width / 2));
 	};
 };
 
@@ -309,7 +399,6 @@ public:
 	};
 };
 
-
 class Bar {
 public:
 	sf::Sprite sprite;
@@ -341,7 +430,6 @@ public:
 		return sprite.getGlobalBounds();
 	}
 };
-
 
 class Pointer {
 public:
@@ -392,7 +480,6 @@ public:
 		return false;
 	}
 };
-
 
 class Slider {
 private:

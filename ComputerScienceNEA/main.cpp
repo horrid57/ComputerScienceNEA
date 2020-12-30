@@ -18,6 +18,8 @@ bool contains(std::vector<sf::Vector2i>& vector, sf::Vector2i value) {
 std::vector<Room> generateLevel() {
     std::vector<Room> rooms;
     std::vector<sf::Vector2i> positions = { sf::Vector2i(200, 400) };
+    std::vector<std::string> directions = { "" };
+    std::vector<std::string> directions2;
 
     int i = 0;
     int attempts = 0;
@@ -26,8 +28,8 @@ std::vector<Room> generateLevel() {
         int randInt = rand() % 4;
         sf::Vector2i nextPosition;
         sf::Vector2i lastPosition = positions.back();
-        //std::cout << i << " " << randInt << " " << lastPosition.x << " " << lastPosition.y << "\n";
         switch (randInt) {
+        // LEFT
         case 0:
             nextPosition = sf::Vector2i(lastPosition.x - roomWidth, lastPosition.y);
             if (!contains(positions, nextPosition) &&
@@ -36,6 +38,8 @@ std::vector<Room> generateLevel() {
                 !contains(positions, sf::Vector2i(nextPosition.x, nextPosition.y - roomHeight))
                 ) {
                 positions.push_back(nextPosition);
+                directions.push_back("Right");
+                directions2.push_back("Left");
                 i++;
                 attempts = 0;
             }
@@ -43,6 +47,7 @@ std::vector<Room> generateLevel() {
                 attempts++;
             }
             break;
+        // UP
         case 1:
             nextPosition = sf::Vector2i(lastPosition.x, lastPosition.y - roomHeight);
             if (!contains(positions, nextPosition) &&
@@ -51,6 +56,8 @@ std::vector<Room> generateLevel() {
                 !contains(positions, sf::Vector2i(nextPosition.x, nextPosition.y - roomHeight))
                 ) {
                 positions.push_back(nextPosition);
+                directions.push_back("Bottom");
+                directions2.push_back("Top");
                 i++;
                 attempts = 0;
             }
@@ -58,6 +65,7 @@ std::vector<Room> generateLevel() {
                 attempts++;
             }
             break;
+        // RIGHT
         case 2:
             nextPosition = sf::Vector2i(lastPosition.x + roomWidth, lastPosition.y);
             if (!contains(positions, nextPosition) &&
@@ -66,6 +74,8 @@ std::vector<Room> generateLevel() {
                 !contains(positions, sf::Vector2i(nextPosition.x, nextPosition.y - roomHeight))
                 ) {
                 positions.push_back(nextPosition);
+                directions.push_back("Left");
+                directions2.push_back("Right");
                 i++;
                 attempts = 0;
             }
@@ -73,6 +83,7 @@ std::vector<Room> generateLevel() {
                 attempts++;
             }
             break;
+        // DOWN
         case 3:
             nextPosition = sf::Vector2i(lastPosition.x, lastPosition.y + roomHeight);
             if (!contains(positions, nextPosition) &&
@@ -81,6 +92,8 @@ std::vector<Room> generateLevel() {
                 !contains(positions, sf::Vector2i(nextPosition.x, nextPosition.y + roomHeight))
                 ) {
                 positions.push_back(nextPosition);
+                directions.push_back("Top");
+                directions2.push_back("Bottom");
                 i++;
                 attempts = 0;
             }
@@ -109,9 +122,9 @@ std::vector<Room> generateLevel() {
             positions.erase(positions.end() - timesStuck, positions.end() - 1);
         }
     }
-
+    directions2.push_back("");
     for (int i = 0; i < positions.size(); i++) {
-        rooms.push_back(Room(wallTexture, positions[i].x, positions[i].y, roomWidth, roomHeight, wallThickness));
+        rooms.push_back(Room(wallTexture, buttonOnTexture, positions[i].x, positions[i].y, roomWidth, roomHeight, wallThickness, directions[i], directions2[i]));
     };
 
     return rooms;
@@ -121,7 +134,7 @@ void gameScreen(sf::RenderWindow& window) {
     long initialTime = 0;
     long endTime = 0;
     std::vector<Room> rooms = generateLevel();
-    Player player = Player(buttonOffTexture, 300, 500, 50, 50, 200, 5);
+    Player player = Player(buttonOffTexture, 300, 500, 50, 50, 1000, 5);
     while (window.isOpen()) {
         sf::Event event;
         while (window.pollEvent(event))
@@ -129,6 +142,9 @@ void gameScreen(sf::RenderWindow& window) {
             if (event.type == sf::Event::Closed) {
                 window.close();
             };
+            if (sf::Keyboard::isKeyPressed(sf::Keyboard::Escape)) {
+                window.close();
+            }
         }
         initialTime = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
         window.clear();
@@ -137,10 +153,7 @@ void gameScreen(sf::RenderWindow& window) {
             rooms[i].draw(window);
         };
         player.move(rooms, (float)timeForLastFrame / 1000000);
-
-        if (sf::Keyboard::isKeyPressed(sf::Keyboard::H)) {
-            rooms = generateLevel();
-        }
+        window.setView(sf::View(player.getCentre(), window.getView().getSize()));
 
         player.draw(window);
 
@@ -385,11 +398,9 @@ void settingsMenu() {
     }
 }
 
-
 int main()
 {
     initialiseElements();
-    window.setView(sf::View(sf::Vector2f(640, 360), sf::Vector2f(1280, 720)));
     window.setFramerateLimit(framerate);
     window.setVerticalSyncEnabled(false);
 

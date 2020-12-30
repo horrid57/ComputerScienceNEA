@@ -4,7 +4,7 @@
 
 std::string windowName = "Game Window";
 
-sf::RenderWindow window(sf::VideoMode(1280, 720), windowName, sf::Style::Titlebar | sf::Style::Close);
+sf::RenderWindow window(sf::VideoMode(1920, 1080), windowName, sf::Style::Titlebar | sf::Style::Close);
 
 class Room;
 
@@ -17,9 +17,9 @@ sf::Texture wallTexture;
 
 // Variables
 long timeForLastFrame = 0;
-int roomHeight = 800;
-int roomWidth = 1400;
-int wallThickness = 6;
+int roomHeight = 400;
+int roomWidth = 600;
+int wallThickness = 30;
 float framerate = 60;
 float gameDifficulty = 0.2;
 int timerLength = 10;
@@ -124,8 +124,8 @@ void initialiseElements() {
     // Defining Settings Menu Elements
     settingsTitle = Label(window, defaultTexture, "Settings", arialRounded, 0.3839, 0.0152, 0.2323, 0.1111);
     resolutionLabel = Label(window, defaultTexture, "Resolution", arialRounded, 0.4232, 0.2187, 0.1537, 0.0800);
-    resolutionMin = Button(window, buttonOffTexture, buttonOnTexture, true, "1280 x 720", arialRounded, 0.3508, 0.3184, 0.0738, 0.0700);
-    resolutionMid = Button(window, buttonOffTexture, buttonOnTexture, false, "1920 x 1080", arialRounded, 0.4270, 0.3184, 0.0738, 0.0700);
+    resolutionMin = Button(window, buttonOffTexture, buttonOnTexture, false, "1280 x 720", arialRounded, 0.3508, 0.3184, 0.0738, 0.0700);
+    resolutionMid = Button(window, buttonOffTexture, buttonOnTexture, true, "1920 x 1080", arialRounded, 0.4270, 0.3184, 0.0738, 0.0700);
     resolutionMax = Button(window, buttonOffTexture, buttonOnTexture, false, "2560 x 1440", arialRounded, 0.5031, 0.3184, 0.0738, 0.0700);
     fullscreen = Button(window, buttonOffTexture, buttonOnTexture, false, "Fullscreen", arialRounded, 0.5792, 0.3184, 0.0738, 0.0700);
     refreshLabel = Label(window, defaultTexture, "Refresh Rate", arialRounded, 0.4232, 0.5130, 0.1537, 0.0800);

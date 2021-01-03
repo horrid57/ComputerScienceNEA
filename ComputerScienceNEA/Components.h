@@ -3,6 +3,32 @@
 #include <iostream>
 #include <math.h>
 
+class Key {
+public:
+	sf::Sprite sprite;
+
+	Key() { };
+
+	Key(sf::Texture& texture, int xPosition, int yPosition, int width, int height) {
+		sprite.setPosition(xPosition, yPosition);
+		sprite.setTexture(texture);
+		sf::FloatRect bounds = sprite.getGlobalBounds();
+		sprite.setScale(width / bounds.width, height / bounds.height);
+	};
+
+	bool checkCollision(sf::FloatRect entity) {
+		return sprite.getGlobalBounds().intersects(entity);
+	}
+
+	sf::FloatRect getBounds() {
+		return sprite.getGlobalBounds();
+	};
+
+	void draw(sf::RenderWindow& window) {
+		window.draw(sprite);
+	};
+};
+
 class Wall {
 public:
 	sf::Sprite sprite;
@@ -103,21 +129,17 @@ public:
 			walls.push_back(Wall(wallTexture, xPosition + width - wallThickness, yPosition + wallThickness, wallThickness, height - (2 * wallThickness)));
 		}
 
-
-
 		if (firstHole == "Top") {
-			door = Door(doorTexture, xPosition  + width * 0.3, yPosition - wallThickness, width * 0.4, wallThickness * 2);
+			door = Door(doorTexture, xPosition + width * 0.3, yPosition - wallThickness, width * 0.4, wallThickness * 2);
 		}
 		else if (firstHole == "Bottom") {
 			door = Door(doorTexture, xPosition + width * 0.3, yPosition - wallThickness + height, width * 0.4, wallThickness * 2);
 		}
-
-
 		else if (firstHole == "Left") {
-			door = Door(doorTexture, xPosition - wallThickness, yPosition + wallThickness + (height - 2 * wallThickness) * 0.3, wallThickness * 2, (height - 2 * wallThickness) * 0.4);
+			door = Door(doorTexture, xPosition - wallThickness, yPosition + wallThickness + (height - (2 * wallThickness)) * 0.3, wallThickness * 2, (height - 2 * wallThickness) * 0.4);
 		}
 		else if (firstHole == "Right") {
-			door = Door(doorTexture, xPosition + width, yPosition - wallThickness + height * 0.3, wallThickness * 2, height * 0.4);
+			door = Door(doorTexture, xPosition + width - wallThickness, yPosition + wallThickness + (height - (2 * wallThickness)) * 0.3, wallThickness * 2, height * 0.4);
 		}
 	};
 
@@ -223,6 +245,39 @@ public:
 	sf::Vector2f getCentre() {
 		return(sf::Vector2f(x + width / 2, y + width / 2));
 	};
+};
+
+class Enemy {
+public:
+	sf::Sprite sprite;
+	int health = 0;
+	int speed = 0;
+	int strength = 0;
+
+	Enemy() { };
+
+	Enemy(sf::Texture texture, int xPosition, int yPosition, int width, int height, int enemySpeed, int maxHealth, int hitStrength) {
+		sprite.setPosition(xPosition, yPosition);
+		sprite.setTexture(texture);
+		sf::FloatRect bounds = sprite.getGlobalBounds();
+		sprite.setScale(width / bounds.width, height / bounds.height);
+		health = maxHealth;
+		speed = enemySpeed;
+		strength = hitStrength;
+	};
+
+	void draw(sf::RenderWindow& window) {
+		window.draw(sprite);
+	};
+
+	bool checkCollision(sf::FloatRect entity) {
+		return sprite.getGlobalBounds().intersects(entity);
+	}
+
+	int damage(int damage) {
+		health -= damage;
+		return health;
+	}
 };
 
 class Image {

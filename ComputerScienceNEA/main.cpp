@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <chrono>
 #include <thread>
+#include <time.h>
 
 bool contains(std::vector<sf::Vector2i>& vector, sf::Vector2i value) {
     for (int i = 0; i < vector.size(); i++) {
@@ -21,10 +22,13 @@ std::vector<Room> generateLevel() {
     std::vector<std::string> directions = { "" };
     std::vector<std::string> directions2;
 
+    srand(time(0));
     int i = 0;
     int attempts = 0;
     int timesStuck = 0;
     while (i < timerLength) {
+        // rand() not truely random... 
+        // srand() with a consistantly different starting value changes the start position of the string
         int randInt = rand() % 4;
         sf::Vector2i nextPosition;
         sf::Vector2i lastPosition = positions.back();
@@ -144,7 +148,10 @@ void gameScreen(sf::RenderWindow& window) {
             };
             if (sf::Keyboard::isKeyPressed(sf::Keyboard::Escape)) {
                 window.close();
-            }
+            };
+            if (sf::Keyboard::isKeyPressed(sf::Keyboard::H)) {
+                rooms = generateLevel();
+            };
         }
         initialTime = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
         window.clear();

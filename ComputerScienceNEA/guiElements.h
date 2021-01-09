@@ -1,5 +1,6 @@
 #pragma once
-#include "Components.h"
+#include <SFML/Graphics.hpp>
+//#include "guiComponents.h"
 #include <iostream>
 
 std::string windowName = "Game Window";
@@ -18,9 +19,9 @@ sf::Texture keyTexture;
 
 // Variables
 long timeForLastFrame = 0;
-int roomHeight = 900;
-int roomWidth = 1500;
-int wallThickness = 40;
+int roomHeight = 500;
+int roomWidth = 1000;
+int wallThickness = 5;
 float framerate = 60;
 float gameDifficulty = 0.2;
 int timerLength = 10;

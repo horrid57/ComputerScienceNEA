@@ -1,5 +1,6 @@
 #include <SFML/Graphics.hpp>
-#include "Components.h"
+#include "levelComponents.h"
+#include "guiComponents.h"
 #include "guiElements.h"
 #include <iostream>
 #include <stdlib.h>
@@ -116,6 +117,8 @@ std::vector<Room> generateLevel() {
         * 
         * Addition of timesStuck should prevent this from happening completely.
         * 
+        *   BUGGY - DISCONNECTED ROOMS HAVE BEEN SEEN - FIGURE IT OUT AT SOME POINT
+        * 
         */
         if (attempts > 50) {
             timesStuck++;
@@ -128,17 +131,147 @@ std::vector<Room> generateLevel() {
     }
     directions2.push_back("");
     for (int i = 0; i < positions.size(); i++) {
-        rooms.push_back(Room(wallTexture, buttonOnTexture, positions[i].x, positions[i].y, roomWidth, roomHeight, wallThickness, directions[i], directions2[i]));
+        Key key = Key(keyTexture, positions[i].x + roomWidth / 2, positions[i].y + roomHeight / 2, 20, 20, false);
+        rooms.push_back(Room(wallTexture, buttonOnTexture, positions[i].x, positions[i].y, roomWidth, roomHeight, wallThickness, key, directions[i], directions2[i]));
     };
 
     return rooms;
 }
 
+void transitionIn(sf::RenderWindow& window, float time, int rotation = 45) {
+    long initialTime = 0;
+    long endTime = 0;
+    float speed = window.getSize().x / time;
+    int offset;
+    sf::RectangleShape line1(sf::Vector2f(window.getSize().x, 100));
+    line1.setOrigin(sf::Vector2f(line1.getLocalBounds().width, 0));
+    line1.rotate(rotation);
+    line1.setPosition(0, window.getSize().y + 100);
+    line1.setFillColor(sf::Color::Blue);
+    sf::RectangleShape line2(sf::Vector2f(window.getSize().x, 100));
+    line2.setOrigin(sf::Vector2f(0, line2.getLocalBounds().height));
+    line2.rotate(rotation);
+    line2.setPosition(window.getSize().x, -100);
+    line2.setFillColor(sf::Color::Blue);
+    while (line1.getPosition().x <= window.getSize().x) {
+        initialTime = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+        sf::Event event;
+        while (window.pollEvent(event))
+        {
+            if (event.type == sf::Event::Closed) {
+                window.close();
+            };
+        }
+        offset = speed * (float)timeForLastFrame / 1000000;
+        line1.setPosition(line1.getPosition().x + offset, line1.getPosition().y);
+        line2.setPosition(line2.getPosition().x - offset, line2.getPosition().y);
+        window.draw(line1);
+        window.draw(line2);
+        window.display();
+        endTime = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+        timeForLastFrame = endTime - initialTime;
+    }
+}
+
+/*void transitionOut(sf::RenderWindow& window) {
+    long initialTime = 0;
+    long endTime = 0;
+    float speed = window.getSize().x / 1;
+    int offset;
+    sf::RectangleShape line1(sf::Vector2f(window.getSize().x * 2, window.getSize().x * 2));
+    line1.setOrigin(sf::Vector2f(line1.getLocalBounds().width, 0));
+    line1.rotate(45);
+    line1.setPosition(window.getSize().x, window.getSize().y + 100);
+    line1.setFillColor(sf::Color::Blue);
+    sf::RectangleShape line2(sf::Vector2f(window.getSize().x * 2, window.getSize().y * 2));
+    line2.rotate(45);
+    line2.setPosition(0, -2000);
+    line2.setFillColor(sf::Color::Blue);
+    while (line1.getPosition().x >= window.getView().getCenter().x - window.getView().getSize().x / 2) {
+        initialTime = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+        sf::Event event;
+        while (window.pollEvent(event))
+        {
+            if (event.type == sf::Event::Closed) {
+                window.close();
+            };
+        }
+        window.clear();
+        offset = speed * (float)timeForLastFrame / 1000000;
+        line1.setPosition(line1.getPosition().x - offset, line1.getPosition().y);
+        line2.setPosition(line2.getPosition().x + offset, line2.getPosition().y);
+        window.draw(line1);
+        window.draw(line2);
+        window.display();
+        endTime = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+        timeForLastFrame = endTime - initialTime;
+    }
+    }
+}*/
+
 void gameScreen(sf::RenderWindow& window) {
+    // vvvvvvvvv
+    //transitionIn(window, 1, 70);
+    // ^^^^^^
     long initialTime = 0;
     long endTime = 0;
     std::vector<Room> rooms = generateLevel();
     Player player = Player(buttonOffTexture, 300, 500, 50, 50, 1000, 5);
+    window.setView(sf::View(player.getCentre(), window.getView().getSize()));
+    std::vector<Key> keys = {};
+    /*for (int i = 1; i < rooms.size() - 1; i++) {
+        sf::FloatRect rb = rooms[i].getBounds();
+        keys.push_back(Key(keyTexture, rb.left + rb.width / 2, rb.top + rb.height / 2, 50, 50));
+    };*/
+    std::vector<Enemy> enemies = {};
+    for (int i = 1; i < rooms.size() - 1; i++) {
+        enemies = {};
+        sf::FloatRect rb = rooms[i].getBounds();
+        for (int j = 0; j < rand() % 3 + 2; j++) {
+            enemies.push_back(Enemy(keyTexture, rb.left + rb.width * ((float)rand() / float(RAND_MAX)) , rb.top + rb.height * ((float)rand() / float(RAND_MAX)), 50, 50, 5, 5, 5, j==0));
+        }
+        rooms[i].setEnemies(enemies);
+    };
+    
+    //ItemHandler itemHandler = ItemHandler(keys);
+    
+    // vvvvv TRANSITION TEST vvvvv
+    /*float speed = window.getSize().x / 1;
+    int offset;
+    sf::RectangleShape line1(sf::Vector2f(window.getSize().x * 2, window.getSize().x * 2));
+    line1.setOrigin(sf::Vector2f(line1.getLocalBounds().width, 0));
+    line1.rotate(70);
+    line1.setPosition(window.getSize().x, window.getSize().y + 100);
+    line1.setFillColor(sf::Color::Blue);
+    sf::RectangleShape line2(sf::Vector2f(window.getSize().x * 2, window.getSize().y * 2));
+    line2.rotate(70);
+    line2.setPosition(0, -2000);
+    line2.setFillColor(sf::Color::Blue);
+    while (line1.getPosition().x >= window.getView().getCenter().x - window.getView().getSize().x / 2) {
+        initialTime = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+        sf::Event event;
+        while (window.pollEvent(event))
+        {
+            if (event.type == sf::Event::Closed) {
+                window.close();
+            };
+        }
+        window.clear();
+        offset = speed * (float)timeForLastFrame / 1000000;
+        line1.setPosition(line1.getPosition().x - offset, line1.getPosition().y);
+        line2.setPosition(line2.getPosition().x + offset, line2.getPosition().y);
+        for (int i = 0; i < rooms.size(); i++) {
+            rooms[i].draw(window);
+        };
+        player.draw(window);
+        window.draw(line1);
+        window.draw(line2);
+        window.display();
+        endTime = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+        timeForLastFrame = endTime - initialTime;
+    }*/
+    // ^^^^^ TRANSITION TEST ^^^^^
+
     while (window.isOpen()) {
         sf::Event event;
         while (window.pollEvent(event))
@@ -156,12 +289,24 @@ void gameScreen(sf::RenderWindow& window) {
         initialTime = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
         window.clear();
 
-        for (int i = 0; i < rooms.size(); i++) {
-            rooms[i].draw(window);
-        };
         player.move(rooms, (float)timeForLastFrame / 1000000);
+        if (sf::Mouse::isButtonPressed(sf::Mouse::Left)) {
+            player.attack(rooms);
+        }
         window.setView(sf::View(player.getCentre(), window.getView().getSize()));
 
+        /*if (itemHandler.checkKeyCollisions(player.getGlobalBounds(), true)) {
+            player.addKey();
+        }
+        itemHandler.draw(window);*/
+        int keysPickedUp = 0;
+        for (int i = 0; i < rooms.size(); i++) {
+            rooms[i].draw(window);
+            if (rooms[i].checkKeyCollision(player.getGlobalBounds())) {
+                keysPickedUp++;
+            }
+        };
+        player.addKey(keysPickedUp);
         player.draw(window);
 
         window.display();
@@ -210,6 +355,7 @@ void gameMenu() {
         }
         difficultySlider.update(window);
         gameDifficulty = difficultySlider.getValue();
+        difficultyLabel.setText(difficultyLabel.getDefaultText() + ": " + std::to_string(difficultySlider.getValue()).substr(0, 4));
 
         if (left.isPressed(window)) {
             playerClass--;
@@ -331,6 +477,7 @@ void settingsMenu() {
         refreshSlider.update(window);
         framerate = refreshSlider.getValue();
         window.setFramerateLimit(framerate);
+        refreshLabel.setText(refreshLabel.getDefaultText() + ": " + std::to_string((int)refreshSlider.getValue()));
 
         if (resolutionMin.isPressed(window)) {
             if (!resolutionMin.getState()) {

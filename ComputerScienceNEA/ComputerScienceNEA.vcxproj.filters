@@ -20,10 +20,13 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Components.h">
+    <ClInclude Include="guiElements.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="guiElements.h">
+    <ClInclude Include="guiComponents.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="levelComponents.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

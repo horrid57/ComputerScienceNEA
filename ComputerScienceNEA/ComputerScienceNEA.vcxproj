@@ -147,8 +147,9 @@
     <ClCompile Include="main.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Components.h" />
+    <ClInclude Include="guiComponents.h" />
     <ClInclude Include="guiElements.h" />
+    <ClInclude Include="levelComponents.h" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="..\..\..\..\Desktop\blue.jpg" />

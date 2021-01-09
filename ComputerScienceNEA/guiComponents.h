@@ -3,283 +3,6 @@
 #include <iostream>
 #include <math.h>
 
-class Key {
-public:
-	sf::Sprite sprite;
-
-	Key() { };
-
-	Key(sf::Texture& texture, int xPosition, int yPosition, int width, int height) {
-		sprite.setPosition(xPosition, yPosition);
-		sprite.setTexture(texture);
-		sf::FloatRect bounds = sprite.getGlobalBounds();
-		sprite.setScale(width / bounds.width, height / bounds.height);
-	};
-
-	bool checkCollision(sf::FloatRect entity) {
-		return sprite.getGlobalBounds().intersects(entity);
-	}
-
-	sf::FloatRect getBounds() {
-		return sprite.getGlobalBounds();
-	};
-
-	void draw(sf::RenderWindow& window) {
-		window.draw(sprite);
-	};
-};
-
-class Wall {
-public:
-	sf::Sprite sprite;
-
-	Wall() { };
-
-	Wall(sf::Texture& texture, int xPosition, int yPosition, int width, int height) {
-		sprite.setPosition(xPosition, yPosition);
-		sprite.setTexture(texture);
-		sf::FloatRect bounds = sprite.getGlobalBounds();
-		sprite.setScale(width / bounds.width, height / bounds.height);
-	};
-
-	sf::FloatRect getBounds() {
-		return sprite.getGlobalBounds();
-	};
-
-	void draw(sf::RenderWindow& window) {
-		window.draw(sprite);
-	};
-
-	bool checkCollision(sf::FloatRect entity) {
-		return sprite.getGlobalBounds().intersects(entity);
-	}
-};
-
-class Door {
-public:
-	sf::Sprite sprite;
-	bool opened = false;
-
-	Door() { };
-
-	Door(sf::Texture& texture, int xPosition, int yPosition, int width, int height) {
-		sprite.setPosition(xPosition, yPosition);
-		sprite.setTexture(texture);
-		sf::FloatRect bounds = sprite.getGlobalBounds();
-		sprite.setScale(width / bounds.width, height / bounds.height);
-	};
-
-	sf::FloatRect getBounds() {
-		return sprite.getGlobalBounds();
-	};
-
-	void draw(sf::RenderWindow& window) {
-		window.draw(sprite);
-	};
-
-	bool checkCollision(sf::FloatRect entity) {
-		return sprite.getGlobalBounds().intersects(entity);
-	};
-
-	void setOpen(bool state) {
-		opened = state;
-	};
-
-	bool isOpened() {
-		return opened;
-	};
-};
-
-class Room {
-public:
-	std::vector<Wall> walls;
-	Door door;
-
-	Room() { };
-
-	Room(sf::Texture& wallTexture, sf::Texture& doorTexture, int xPosition, int yPosition, int width, int height, int wallThickness, std::string firstHole, std::string secondHole = "") {
-		if (firstHole == "Top" || secondHole == "Top") {
-			walls.push_back(Wall(wallTexture, xPosition, yPosition, width * 0.3, wallThickness));
-			walls.push_back(Wall(wallTexture, xPosition + width * 0.7, yPosition, width * 0.3, wallThickness));
-		}
-		else {
-			walls.push_back(Wall(wallTexture, xPosition, yPosition, width, wallThickness));
-		}
-		if (firstHole == "Bottom" || secondHole == "Bottom") {
-			walls.push_back(Wall(wallTexture, xPosition, yPosition + height - wallThickness, width * 0.3, wallThickness));
-			walls.push_back(Wall(wallTexture, xPosition + width * 0.7, yPosition + height - wallThickness, width * 0.3, wallThickness));
-		}
-		else {
-			walls.push_back(Wall(wallTexture, xPosition, yPosition + height - wallThickness, width, wallThickness));
-		}
-
-
-		if (firstHole == "Left" || secondHole == "Left") {
-			walls.push_back(Wall(wallTexture, xPosition, yPosition + wallThickness, wallThickness, (height - (2 * wallThickness)) * 0.3));
-			walls.push_back(Wall(wallTexture, xPosition, yPosition + wallThickness + (height - (2 * wallThickness)) * 0.7, wallThickness, (height - (2 * wallThickness)) * 0.3));
-		}
-		else {
-			walls.push_back(Wall(wallTexture, xPosition, yPosition + wallThickness, wallThickness, height - (2 * wallThickness)));
-		}
-		if (firstHole == "Right" || secondHole == "Right") {
-			walls.push_back(Wall(wallTexture, xPosition + width - wallThickness, yPosition + wallThickness, wallThickness, (height - (2 * wallThickness)) * 0.3));
-			walls.push_back(Wall(wallTexture, xPosition + width - wallThickness, yPosition + wallThickness + (height - (2 * wallThickness)) * 0.7, wallThickness, (height - (2 * wallThickness)) * 0.3));
-		}
-		else {
-			walls.push_back(Wall(wallTexture, xPosition + width - wallThickness, yPosition + wallThickness, wallThickness, height - (2 * wallThickness)));
-		}
-
-		if (firstHole == "Top") {
-			door = Door(doorTexture, xPosition + width * 0.3, yPosition - wallThickness, width * 0.4, wallThickness * 2);
-		}
-		else if (firstHole == "Bottom") {
-			door = Door(doorTexture, xPosition + width * 0.3, yPosition - wallThickness + height, width * 0.4, wallThickness * 2);
-		}
-		else if (firstHole == "Left") {
-			door = Door(doorTexture, xPosition - wallThickness, yPosition + wallThickness + (height - (2 * wallThickness)) * 0.3, wallThickness * 2, (height - 2 * wallThickness) * 0.4);
-		}
-		else if (firstHole == "Right") {
-			door = Door(doorTexture, xPosition + width - wallThickness, yPosition + wallThickness + (height - (2 * wallThickness)) * 0.3, wallThickness * 2, height * 0.4);
-		}
-	};
-
-	void draw(sf::RenderWindow& window) {
-		for (int i = 0; i < walls.size(); i++) {
-			walls[i].draw(window);
-		};
-		if (!door.isOpened()) {
-			door.draw(window);
-		};
-	};
-
-	bool checkCollisions(sf::FloatRect entity) {
-		for (int i = 0; i < walls.size(); i++) {
-			if (walls[i].checkCollision(entity)) {
-				return true;
-			}
-		};
-		return false;
-	};
-
-	bool checkDoorCollisions(sf::FloatRect entity, bool open = false) {
-		if (!door.isOpened() && door.checkCollision(entity)) {
-			if (open) {
-				door.setOpen(true);
-			};
-			return true;
-		};
-		return false;
-	}
-};
-
-class Player {
-public:
-	sf::Sprite sprite;
-	int x = 0;
-	int y = 0;
-	int speed = 0;
-	int width = 0;
-	int height = 0;
-	int tempY = y;
-	int tempX = x;
-	bool keyPressed = false;
-	bool collided = false;
-
-	Player() { };
-
-	Player(sf::Texture& texture, int xPosition, int yPosition, int playerWidth, int playerHeight, int playerSpeed, int maxHealth) {
-		x = xPosition;
-		y = yPosition;
-		width = playerWidth;
-		height = playerHeight;
-		speed = playerSpeed;
-		sprite.setTexture(texture);
-		sf::FloatRect bounds = sprite.getGlobalBounds();
-		sprite.setScale(width / bounds.width, height / bounds.height);
-		sprite.setPosition(x, y);
-	};
-
-	void move(std::vector<Room>& rooms, float speedScale) {
-		keyPressed = false;
-		tempX = x;
-		tempY = y;
-		if (sf::Keyboard::isKeyPressed(sf::Keyboard::W)) {
-			tempY -= (speed * speedScale);
-			keyPressed = true;
-		}
-		if (sf::Keyboard::isKeyPressed(sf::Keyboard::S)) {
-			tempY += (speed * speedScale);
-			keyPressed = true;
-		}
-		if (sf::Keyboard::isKeyPressed(sf::Keyboard::A)) {
-			tempX -= (speed * speedScale);
-			keyPressed = true;
-		}
-		if (sf::Keyboard::isKeyPressed(sf::Keyboard::D)) {
-			tempX += (speed * speedScale);
-			keyPressed = true;
-		}
-		if (keyPressed) {
-			collided = false;
-			for (int i = 0; i < rooms.size(); i++) {
-				if (rooms[i].checkCollisions(sf::FloatRect(tempX, tempY, width, height)) || rooms[i].checkDoorCollisions(sf::FloatRect(tempX, tempY, width, height), true)) {
-					collided = true;
-				};
-			};
-			if (!collided) {
-				x = tempX;
-				y = tempY;
-				sprite.setPosition(x, y);
-			}
-		}
-	};
-
-	sf::FloatRect getGlobalBounds() {
-		return sprite.getGlobalBounds();
-	};
-
-	void draw(sf::RenderWindow& window) {
-		window.draw(sprite);
-	};
-
-	sf::Vector2f getCentre() {
-		return(sf::Vector2f(x + width / 2, y + width / 2));
-	};
-};
-
-class Enemy {
-public:
-	sf::Sprite sprite;
-	int health = 0;
-	int speed = 0;
-	int strength = 0;
-
-	Enemy() { };
-
-	Enemy(sf::Texture texture, int xPosition, int yPosition, int width, int height, int enemySpeed, int maxHealth, int hitStrength) {
-		sprite.setPosition(xPosition, yPosition);
-		sprite.setTexture(texture);
-		sf::FloatRect bounds = sprite.getGlobalBounds();
-		sprite.setScale(width / bounds.width, height / bounds.height);
-		health = maxHealth;
-		speed = enemySpeed;
-		strength = hitStrength;
-	};
-
-	void draw(sf::RenderWindow& window) {
-		window.draw(sprite);
-	};
-
-	bool checkCollision(sf::FloatRect entity) {
-		return sprite.getGlobalBounds().intersects(entity);
-	}
-
-	int damage(int damage) {
-		health -= damage;
-		return health;
-	}
-};
-
 class Image {
 public:
 	sf::Sprite sprite;
@@ -308,10 +31,12 @@ public:
 	sf::Sprite sprite;
 	sf::Texture Texture;
 	sf::Text text;
+	std::string defaultText;
 
 	Label() { };
 
 	Label(sf::RenderWindow& window, sf::Texture& texture, std::string message, sf::Font& messageFont, float buttonX, float buttonY, float buttonWidth, float buttonHeight) {
+		defaultText = message;
 		text.setString(message);
 		text.setFont(messageFont);
 		text.setCharacterSize(300);
@@ -342,15 +67,21 @@ public:
 		text.setPosition(bounds.left + (bounds.width / 2), bounds.top + (bounds.height / 2));
 	};
 
-	void setText(std::string message) {
-		text.setScale(1, 1);
+	void setText(std::string message, bool resize = true) {
 		text.setString(message);
-		positionText();
+		if (resize) {
+			text.setScale(1, 1);
+			positionText();
+		}
 	};
 
 	void draw(sf::RenderWindow& window) {
 		window.draw(sprite);
 		window.draw(text);
+	};
+
+	std::string getDefaultText() {
+		return defaultText;
 	};
 };
 
@@ -579,7 +310,8 @@ public:
 	};
 
 	void update(sf::RenderWindow& window) {
-		if (sliderPointer.inBounds(window) && sf::Mouse::isButtonPressed(sf::Mouse::Left)) {
+		// CHANGE BASED ON USER FEEDBACK HERE VVVVV
+		if ((sliderPointer.inBounds(window) || sliderBar.inBounds(window)) && sf::Mouse::isButtonPressed(sf::Mouse::Left)) {
 			moving = true;
 		};
 		if (moving) {

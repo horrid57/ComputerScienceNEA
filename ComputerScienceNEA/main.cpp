@@ -1,12 +1,17 @@
 #include <SFML/Graphics.hpp>
-#include "levelComponents.h"
-#include "guiComponents.h"
-#include "guiElements.h"
 #include <iostream>
 #include <stdlib.h>
 #include <chrono>
 #include <thread>
 #include <time.h>
+
+std::string windowName = "Game Window";
+sf::RenderWindow window(sf::VideoMode(1920, 1080), windowName, sf::Style::Titlebar | sf::Style::Close);
+
+#include "textures.h"
+#include "levelComponents.h"
+#include "guiComponents.h"
+#include "guiElements.h"
 
 bool contains(std::vector<sf::Vector2i>& vector, sf::Vector2i value) {
     for (int i = 0; i < vector.size(); i++) {
@@ -17,11 +22,11 @@ bool contains(std::vector<sf::Vector2i>& vector, sf::Vector2i value) {
     return false;
 };
 
-std::vector<Room> generateLevel() {
+std::vector<Room> generateRooms() {
     std::vector<Room> rooms;
     std::vector<sf::Vector2i> positions = { sf::Vector2i(200, 400) };
-    std::vector<std::string> directions = { "" };
-    std::vector<std::string> directions2;
+    std::vector<std::string> doorIn = { "" };
+    std::vector<std::string> doorOut;
 
     srand(time(0));
     int i = 0;
@@ -43,8 +48,8 @@ std::vector<Room> generateLevel() {
                 !contains(positions, sf::Vector2i(nextPosition.x, nextPosition.y - roomHeight))
                 ) {
                 positions.push_back(nextPosition);
-                directions.push_back("Right");
-                directions2.push_back("Left");
+                doorIn.push_back("Right");
+                doorOut.push_back("Left");
                 i++;
                 attempts = 0;
             }
@@ -61,8 +66,8 @@ std::vector<Room> generateLevel() {
                 !contains(positions, sf::Vector2i(nextPosition.x, nextPosition.y - roomHeight))
                 ) {
                 positions.push_back(nextPosition);
-                directions.push_back("Bottom");
-                directions2.push_back("Top");
+                doorIn.push_back("Bottom");
+                doorOut.push_back("Top");
                 i++;
                 attempts = 0;
             }
@@ -79,8 +84,8 @@ std::vector<Room> generateLevel() {
                 !contains(positions, sf::Vector2i(nextPosition.x, nextPosition.y - roomHeight))
                 ) {
                 positions.push_back(nextPosition);
-                directions.push_back("Left");
-                directions2.push_back("Right");
+                doorIn.push_back("Left");
+                doorOut.push_back("Right");
                 i++;
                 attempts = 0;
             }
@@ -97,8 +102,8 @@ std::vector<Room> generateLevel() {
                 !contains(positions, sf::Vector2i(nextPosition.x, nextPosition.y + roomHeight))
                 ) {
                 positions.push_back(nextPosition);
-                directions.push_back("Top");
-                directions2.push_back("Bottom");
+                doorIn.push_back("Top");
+                doorOut.push_back("Bottom");
                 i++;
                 attempts = 0;
             }
@@ -129,10 +134,9 @@ std::vector<Room> generateLevel() {
             positions.erase(positions.end() - timesStuck, positions.end() - 1);
         }
     }
-    directions2.push_back("");
+    doorOut.push_back("");
     for (int i = 0; i < positions.size(); i++) {
-        Key key = Key(keyTexture, positions[i].x + roomWidth / 2, positions[i].y + roomHeight / 2, 20, 20, false);
-        rooms.push_back(Room(wallTexture, buttonOnTexture, positions[i].x, positions[i].y, roomWidth, roomHeight, wallThickness, key, directions[i], directions2[i]));
+        rooms.push_back(Room(wallTexture, buttonOnTexture, positions[i].x, positions[i].y, roomWidth, roomHeight, wallThickness, doorIn[i], doorOut[i]));
     };
 
     return rooms;
@@ -211,40 +215,40 @@ void transitionIn(sf::RenderWindow& window, float time, int rotation = 45) {
 
 void gameScreen(sf::RenderWindow& window) {
     // vvvvvvvvv
-    //transitionIn(window, 1, 70);
+    //transitionIn(window, 1, 45);
     // ^^^^^^
     long initialTime = 0;
     long endTime = 0;
-    std::vector<Room> rooms = generateLevel();
+    std::vector<Room> rooms = generateRooms();
     Player player = Player(buttonOffTexture, 300, 500, 50, 50, 1000, 5);
     window.setView(sf::View(player.getCentre(), window.getView().getSize()));
-    std::vector<Key> keys = {};
-    /*for (int i = 1; i < rooms.size() - 1; i++) {
-        sf::FloatRect rb = rooms[i].getBounds();
-        keys.push_back(Key(keyTexture, rb.left + rb.width / 2, rb.top + rb.height / 2, 50, 50));
-    };*/
+
     std::vector<Enemy> enemies = {};
     for (int i = 1; i < rooms.size() - 1; i++) {
+        Key key = Key(0, 0, 20, 20, false);
         enemies = {};
         sf::FloatRect rb = rooms[i].getBounds();
         for (int j = 0; j < rand() % 3 + 2; j++) {
-            enemies.push_back(Enemy(keyTexture, rb.left + rb.width * ((float)rand() / float(RAND_MAX)) , rb.top + rb.height * ((float)rand() / float(RAND_MAX)), 50, 50, 5, 5, 5, j==0));
+            if (j == 0) {
+                enemies.push_back(Enemy(rb.left + rb.width * ((float)rand() / float(RAND_MAX)), rb.top + rb.height * ((float)rand() / float(RAND_MAX)), 50, 50, 5, 5, 5, key));
+            }
+            else {
+                enemies.push_back(Enemy(rb.left + rb.width * ((float)rand() / float(RAND_MAX)), rb.top + rb.height * ((float)rand() / float(RAND_MAX)), 50, 50, 5, 5, 5));
+            }
         }
         rooms[i].setEnemies(enemies);
     };
-    
-    //ItemHandler itemHandler = ItemHandler(keys);
-    
+        
     // vvvvv TRANSITION TEST vvvvv
     /*float speed = window.getSize().x / 1;
     int offset;
     sf::RectangleShape line1(sf::Vector2f(window.getSize().x * 2, window.getSize().x * 2));
     line1.setOrigin(sf::Vector2f(line1.getLocalBounds().width, 0));
-    line1.rotate(70);
+    line1.rotate(45);
     line1.setPosition(window.getSize().x, window.getSize().y + 100);
     line1.setFillColor(sf::Color::Blue);
     sf::RectangleShape line2(sf::Vector2f(window.getSize().x * 2, window.getSize().y * 2));
-    line2.rotate(70);
+    line2.rotate(45);
     line2.setPosition(0, -2000);
     line2.setFillColor(sf::Color::Blue);
     while (line1.getPosition().x >= window.getView().getCenter().x - window.getView().getSize().x / 2) {
@@ -283,30 +287,22 @@ void gameScreen(sf::RenderWindow& window) {
                 window.close();
             };
             if (sf::Keyboard::isKeyPressed(sf::Keyboard::H)) {
-                rooms = generateLevel();
+                rooms = generateRooms();
             };
         }
         initialTime = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
         window.clear();
 
         player.move(rooms, (float)timeForLastFrame / 1000000);
-        if (sf::Mouse::isButtonPressed(sf::Mouse::Left)) {
-            player.attack(rooms);
-        }
         window.setView(sf::View(player.getCentre(), window.getView().getSize()));
+        player.attack(rooms);
+        player.pickUpKeys(rooms);
 
-        /*if (itemHandler.checkKeyCollisions(player.getGlobalBounds(), true)) {
-            player.addKey();
-        }
-        itemHandler.draw(window);*/
-        int keysPickedUp = 0;
+        
         for (int i = 0; i < rooms.size(); i++) {
             rooms[i].draw(window);
-            if (rooms[i].checkKeyCollision(player.getGlobalBounds())) {
-                keysPickedUp++;
-            }
         };
-        player.addKey(keysPickedUp);
+
         player.draw(window);
 
         window.display();

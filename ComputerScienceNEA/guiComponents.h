@@ -35,14 +35,14 @@ public:
 
 	Label() { };
 
-	Label(sf::RenderWindow& window, sf::Texture& texture, std::string message, sf::Font& messageFont, float buttonX, float buttonY, float buttonWidth, float buttonHeight) {
+	Label(std::string message, float buttonX, float buttonY, float buttonWidth, float buttonHeight) {
 		defaultText = message;
 		text.setString(message);
-		text.setFont(messageFont);
+		text.setFont(arialRounded);
 		text.setCharacterSize(300);
 
 		sf::Vector2u windowSize = window.getSize();
-		sprite.setTexture(texture);
+		sprite.setTexture(buttonOffTexture);
 		sprite.setPosition(buttonX * windowSize.x, buttonY * windowSize.y);
 		sf::FloatRect bounds = sprite.getLocalBounds();
 		sprite.setScale((buttonWidth * windowSize.x) / bounds.width, (buttonHeight * windowSize.y) / bounds.height);
@@ -94,9 +94,9 @@ public:
 
 	Button() { };
 
-	Button(sf::RenderWindow& window, sf::Texture& buttonOffTexture, sf::Texture& buttonOnTexture, bool state, std::string message, sf::Font& messageFont, float buttonX, float buttonY, float buttonWidth, float buttonHeight) {
+	Button(bool state, std::string message, float buttonX, float buttonY, float buttonWidth, float buttonHeight) {
 		text.setString(message);
-		text.setFont(messageFont);
+		text.setFont(arialRounded);
 		text.setCharacterSize(300);
 		enabled = state;
 
@@ -279,7 +279,7 @@ private:
 public:
 	Slider() { };
 
-	Slider(sf::RenderWindow& window, sf::Texture& texture, sf::Texture& texture2, float minValue, float maxValue, float initialValue, float sliderX, float sliderY, float sliderWidth, float sliderHeight) {
+	Slider(float minValue, float maxValue, float initialValue, float sliderX, float sliderY, float sliderWidth, float sliderHeight) {
 		minimumValue = minValue;
 		maximumValue = maxValue;
 		sf::Vector2u windowSize = window.getSize();
@@ -287,7 +287,7 @@ public:
 		int barY = windowSize.y * (sliderY + 0.212355 * sliderHeight);
 		int barWidth = 0.8929 * sliderWidth * windowSize.x;
 		int barHeight = 0.1482 * sliderHeight * windowSize.y;
-		sliderBar = Bar(texture, barX, barY, barWidth, barHeight);
+		sliderBar = Bar(buttonOnTexture, barX, barY, barWidth, barHeight);
 		if (initialValue < minimumValue) {
 			initialValue = minimumValue;
 		}
@@ -295,7 +295,7 @@ public:
 			initialValue = maximumValue;
 		};
 		int pointerWidth = 0.03 * sliderWidth * windowSize.x;
-		sliderPointer = Pointer(texture2, barX + barWidth * ((initialValue - minimumValue) / (maximumValue - minimumValue)), barY + barHeight / 2, pointerWidth, pointerWidth);
+		sliderPointer = Pointer(buttonOffTexture, barX + barWidth * ((initialValue - minimumValue) / (maximumValue - minimumValue)), barY + barHeight / 2, pointerWidth, pointerWidth);
 	};
 
 	void draw(sf::RenderWindow& window) {

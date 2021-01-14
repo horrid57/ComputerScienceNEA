@@ -4,32 +4,6 @@
 #include <math.h>
 #include <chrono>
 
-class Item {
-public:
-	sf::Sprite sprite;
-
-	Item() { };
-
-	Item(sf::Texture& texture, int xPosition, int yPosition, int width, int height) {
-		sprite.setPosition(xPosition, yPosition);
-		sprite.setTexture(texture);
-		sf::FloatRect bounds = sprite.getGlobalBounds();
-		sprite.setScale(width / bounds.width, height / bounds.height);
-	}
-
-	bool checkCollision(sf::FloatRect entity) {
-		return sprite.getGlobalBounds().intersects(entity);
-	}
-
-	sf::FloatRect getBounds() {
-		return sprite.getGlobalBounds();
-	};
-
-	void draw(sf::RenderWindow& window) {
-		window.draw(sprite);
-	};
-};
-
 class Key {
 public:
 	sf::Sprite sprite;
@@ -37,10 +11,10 @@ public:
 
 	Key() { };
 
-	Key(sf::Texture& texture, int xPosition, int yPosition, int width, int height, bool keyDropped = false) {
-		visible = keyDropped;
+	Key(int xPosition, int yPosition, int width, int height, bool isVisible = false) {
+		visible = isVisible;
 		sprite.setPosition(xPosition, yPosition);
-		sprite.setTexture(texture);
+		sprite.setTexture(keyTexture);
 		sf::FloatRect bounds = sprite.getGlobalBounds();
 		sprite.setScale(width / bounds.width, height / bounds.height);
 	}
@@ -77,42 +51,15 @@ public:
 	}
 };
 
-/*class ItemHandler {
-public:
-	std::vector<Key> keys;
-
-	ItemHandler() { };
-
-	ItemHandler(std::vector<Key> keyVector) {
-		keys = keyVector;
-	};
-
-	bool checkKeyCollisions(sf::FloatRect entity, bool pickUp = false) {
-		bool collided = false;
-		for (int i = 0; i < keys.size(); i++) {
-			if (keys[i].checkCollision(entity, pickUp)) {
-				collided = true;
-			}
-		}
-		return collided;
-	}
-
-	void draw(sf::RenderWindow& window) {
-		for (int i = 0; i < keys.size(); i++) {
-			keys[i].draw(window);
-		}
-	}
-};*/
-
 class Wall {
 public:
 	sf::Sprite sprite;
 
 	Wall() { };
 
-	Wall(sf::Texture& texture, int xPosition, int yPosition, int width, int height) {
+	Wall(int xPosition, int yPosition, int width, int height) {
 		sprite.setPosition(xPosition, yPosition);
-		sprite.setTexture(texture);
+		sprite.setTexture(wallTexture);
 		sf::FloatRect bounds = sprite.getGlobalBounds();
 		sprite.setScale(width / bounds.width, height / bounds.height);
 	};
@@ -169,19 +116,29 @@ public:
 class Enemy {
 public:
 	sf::Sprite sprite;
+	Key heldKey;
+	bool hasKey = false;
 	int health = 0;
 	int speed = 0;
 	int strength = 0;
-	bool hasKey = false;
 	double damageCooldown = 1000;
 	double lastDamaged = 0;
 
 	Enemy() { };
 
-	Enemy(sf::Texture texture, int xPosition, int yPosition, int width, int height, int enemySpeed, int maxHealth, int hitStrength, bool key = false) {
-		hasKey = key;
+	Enemy(int xPosition, int yPosition, int width, int height, int enemySpeed, int maxHealth, int hitStrength, Key key) {
+		heldKey = key;
+		hasKey = true;
+		defaultConstructor(xPosition, yPosition, width, height, enemySpeed, maxHealth, hitStrength);
+	};
+
+	Enemy(int xPosition, int yPosition, int width, int height, int enemySpeed, int maxHealth, int hitStrength) {
+		defaultConstructor(xPosition, yPosition, width, height, enemySpeed, maxHealth, hitStrength);
+	};
+
+	void defaultConstructor(int xPosition, int yPosition, int width, int height, int enemySpeed, int maxHealth, int hitStrength) {
 		sprite.setPosition(xPosition, yPosition);
-		sprite.setTexture(texture);
+		sprite.setTexture(enemyTexture);
 		sf::FloatRect bounds = sprite.getGlobalBounds();
 		sprite.setScale(width / bounds.width, height / bounds.height);
 		health = maxHealth;
@@ -206,7 +163,7 @@ public:
 		double timeNow = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
 		if (lastDamaged + damageCooldown < timeNow) {
 			lastDamaged = timeNow;
-			health = health - damage;
+			health -= damage;
 		}
 	};
 
@@ -214,8 +171,14 @@ public:
 		return health <= 0;
 	};
 
-	bool dropsKey() {
-		return hasKey;
+	bool droppingKey() {
+		return (hasKey && isDead());
+	}
+
+	Key dropKey() {
+		heldKey.setPosition(getGlobalBounds());
+		heldKey.setDropped(true);
+		return heldKey;
 	};
 
 	sf::FloatRect getGlobalBounds() {
@@ -234,37 +197,37 @@ public:
 
 	Room() { };
 
-	Room(sf::Texture& wallTexture, sf::Texture& doorTexture, int xPosition, int yPosition, int width, int height, int wallThickness, Key& keyObject, std::string firstHole, std::string secondHole = "") {
+	Room(sf::Texture& wallTexture, sf::Texture& doorTexture, int xPosition, int yPosition, int width, int height, int wallThickness, std::string firstHole, std::string secondHole = "") {
 		bounds = sf::FloatRect(xPosition, yPosition, width, height);
 		if (firstHole == "Top" || secondHole == "Top") {
-			walls.push_back(Wall(wallTexture, xPosition, yPosition, width * 0.3, wallThickness));
-			walls.push_back(Wall(wallTexture, xPosition + width * 0.7, yPosition, width * 0.3, wallThickness));
+			walls.push_back(Wall(xPosition, yPosition, width * 0.3, wallThickness));
+			walls.push_back(Wall(xPosition + width * 0.7, yPosition, width * 0.3, wallThickness));
 		}
 		else {
-			walls.push_back(Wall(wallTexture, xPosition, yPosition, width, wallThickness));
+			walls.push_back(Wall(xPosition, yPosition, width, wallThickness));
 		}
 		if (firstHole == "Bottom" || secondHole == "Bottom") {
-			walls.push_back(Wall(wallTexture, xPosition, yPosition + height - wallThickness, width * 0.3, wallThickness));
-			walls.push_back(Wall(wallTexture, xPosition + width * 0.7, yPosition + height - wallThickness, width * 0.3, wallThickness));
+			walls.push_back(Wall(xPosition, yPosition + height - wallThickness, width * 0.3, wallThickness));
+			walls.push_back(Wall(xPosition + width * 0.7, yPosition + height - wallThickness, width * 0.3, wallThickness));
 		}
 		else {
-			walls.push_back(Wall(wallTexture, xPosition, yPosition + height - wallThickness, width, wallThickness));
+			walls.push_back(Wall(xPosition, yPosition + height - wallThickness, width, wallThickness));
 		}
 
 
 		if (firstHole == "Left" || secondHole == "Left") {
-			walls.push_back(Wall(wallTexture, xPosition, yPosition + wallThickness, wallThickness, (height - (2 * wallThickness)) * 0.3));
-			walls.push_back(Wall(wallTexture, xPosition, yPosition + wallThickness + (height - (2 * wallThickness)) * 0.7, wallThickness, (height - (2 * wallThickness)) * 0.3));
+			walls.push_back(Wall(xPosition, yPosition + wallThickness, wallThickness, (height - (2 * wallThickness)) * 0.3));
+			walls.push_back(Wall(xPosition, yPosition + wallThickness + (height - (2 * wallThickness)) * 0.7, wallThickness, (height - (2 * wallThickness)) * 0.3));
 		}
 		else {
-			walls.push_back(Wall(wallTexture, xPosition, yPosition + wallThickness, wallThickness, height - (2 * wallThickness)));
+			walls.push_back(Wall(xPosition, yPosition + wallThickness, wallThickness, height - (2 * wallThickness)));
 		}
 		if (firstHole == "Right" || secondHole == "Right") {
-			walls.push_back(Wall(wallTexture, xPosition + width - wallThickness, yPosition + wallThickness, wallThickness, (height - (2 * wallThickness)) * 0.3));
-			walls.push_back(Wall(wallTexture, xPosition + width - wallThickness, yPosition + wallThickness + (height - (2 * wallThickness)) * 0.7, wallThickness, (height - (2 * wallThickness)) * 0.3));
+			walls.push_back(Wall(xPosition + width - wallThickness, yPosition + wallThickness, wallThickness, (height - (2 * wallThickness)) * 0.3));
+			walls.push_back(Wall(xPosition + width - wallThickness, yPosition + wallThickness + (height - (2 * wallThickness)) * 0.7, wallThickness, (height - (2 * wallThickness)) * 0.3));
 		}
 		else {
-			walls.push_back(Wall(wallTexture, xPosition + width - wallThickness, yPosition + wallThickness, wallThickness, height - (2 * wallThickness)));
+			walls.push_back(Wall(xPosition + width - wallThickness, yPosition + wallThickness, wallThickness, height - (2 * wallThickness)));
 		}
 
 		if (firstHole == "Top") {
@@ -279,7 +242,6 @@ public:
 		else if (firstHole == "Right") {
 			door = Door(doorTexture, xPosition + width - wallThickness, yPosition + wallThickness + (height - (2 * wallThickness)) * 0.3, wallThickness * 2, height * 0.4);
 		}
-		key = keyObject;
 	};
 
 	void draw(sf::RenderWindow& window) {
@@ -316,21 +278,15 @@ public:
 		return false;
 	}
 
-	bool checkEnemyCollisions(sf::FloatRect entity, int attackDamage = 0) {
-		bool collided = false;
+	void attackEnemies(sf::FloatRect entity, int attackDamage = 0) {
 		for (int i = 0; i < enemies.size(); i++) {
-			if (enemies[i].checkCollision(entity)) {
-				if (attackDamage != 0) {
-					enemies[i].damage(attackDamage);
-					if (enemies[i].dropsKey() && enemies[i].isDead()) {
-						key.setPosition(enemies[i].getGlobalBounds());
-						key.setDropped();
-					}
+			if (enemies[i].checkCollision(entity) && attackDamage != 0) {
+				enemies[i].damage(attackDamage);
+				if (enemies[i].droppingKey()) {
+					key = enemies[i].dropKey();
 				}
-				collided = true;
 			}
 		}
-		return collided;
 	}
 
 	bool checkKeyCollision(sf::FloatRect entity) {
@@ -377,7 +333,6 @@ public:
 	};
 
 	void move(std::vector<Room>& rooms, float speedScale) {
-		keyPressed = false;
 		tempX = x;
 		tempY = y;
 		if (sf::Keyboard::isKeyPressed(sf::Keyboard::W)) {
@@ -404,12 +359,11 @@ public:
 				if (rooms[i].checkCollisions(sf::FloatRect(tempX, tempY, width, height))) {
 					collided = true;
 				};
-				if (rooms[i].checkDoorCollisions(sf::FloatRect(tempX, tempY, width, height))) {
-					collided = true;
+				if (rooms[i].checkDoorCollisions(sf::FloatRect(tempX, tempY, width, height), keys > 0)) {
 					if (keys > 0) {
-						rooms[i].checkDoorCollisions(sf::FloatRect(tempX, tempY, width, height), true);
 						keys--;
 					}
+					collided = true;
 				}
 			};
 			if (!collided) {
@@ -432,12 +386,11 @@ public:
 				if (rooms[i].checkCollisions(sf::FloatRect(tempX, tempY, width, height))) {
 					collided = true;
 				};
-				if (rooms[i].checkDoorCollisions(sf::FloatRect(tempX, tempY, width, height))) {
-					collided = true;
+				if (rooms[i].checkDoorCollisions(sf::FloatRect(tempX, tempY, width, height), keys > 0)) {
 					if (keys > 0) {
-						rooms[i].checkDoorCollisions(sf::FloatRect(tempX, tempY, width, height), true);
 						keys--;
 					}
+					collided = true;
 				}
 			};
 			if (!collided) {
@@ -466,9 +419,22 @@ public:
 	};
 
 	void attack(std::vector<Room>& rooms) {
-		for (int i = 0; i < rooms.size(); i++) {
-			rooms[i].checkEnemyCollisions(sprite.getGlobalBounds(), 1);
+		if (sf::Mouse::isButtonPressed(sf::Mouse::Left)) {
+			for (int i = 0; i < rooms.size(); i++) {
+				rooms[i].attackEnemies(sprite.getGlobalBounds(), 1);
+			}
 		}
+	}
+
+	void pickUpKeys(std::vector<Room>& rooms) {
+		int keysPickedUp = 0;
+		for (int i = 0; i < rooms.size(); i++) {
+			rooms[i].draw(window);
+			if (rooms[i].checkKeyCollision(getGlobalBounds())) {
+				keysPickedUp++;
+			}
+		};
+		addKey(keysPickedUp);
 	}
 };
 

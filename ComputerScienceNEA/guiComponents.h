@@ -3,13 +3,14 @@
 #include <iostream>
 #include <math.h>
 
+
 class Image {
 public:
 	sf::Sprite sprite;
 
 	Image() { };
 
-	Image(sf::RenderWindow& window, sf::Texture& texture, float xPosition, float yPosition, float width, float height) {
+	Image(sf::Texture& texture, float xPosition, float yPosition, float width, float height) {
 		sf::Vector2u windowSize = window.getSize();
 		sprite.setTexture(texture);
 		sprite.setPosition(xPosition * windowSize.x, yPosition * windowSize.y);
@@ -21,7 +22,7 @@ public:
 		sprite.setTexture(texture);
 	};
 
-	void draw(sf::RenderWindow& window) {
+	void draw() {
 		window.draw(sprite);
 	};
 };
@@ -75,7 +76,7 @@ public:
 		}
 	};
 
-	void draw(sf::RenderWindow& window) {
+	void draw() {
 		window.draw(sprite);
 		window.draw(text);
 	};
@@ -140,7 +141,7 @@ public:
 		return true;
 	};
 
-	bool isPressed(sf::RenderWindow& window) {
+	bool isPressed() {
 		if (!sf::Mouse::isButtonPressed(sf::Mouse::Left)) {
 			mouseDown = false;
 		}
@@ -153,7 +154,7 @@ public:
 		}
 	};
 
-	void draw(sf::RenderWindow& window) {
+	void draw() {
 		window.draw(sprite);
 		window.draw(text);
 	};
@@ -198,11 +199,11 @@ public:
 		sprite.setPosition(xPosition, yPosition);
 	};
 
-	void draw(sf::RenderWindow& window) {
+	void draw() {
 		window.draw(sprite);
 	};
 
-	bool inBounds(sf::RenderWindow& window) {
+	bool inBounds() {
 		sf::Vector2i mousePosition = sf::Mouse::getPosition(window);
 		sf::FloatRect bounds = sprite.getGlobalBounds();
 		if (mousePosition.x < bounds.left + bounds.width && mousePosition.x > bounds.left &&
@@ -231,11 +232,11 @@ public:
 		sprite.setOrigin(spriteBounds.width / 2, spriteBounds.height / 2);
 	};
 
-	void draw(sf::RenderWindow& window) {
+	void draw() {
 		window.draw(sprite);
 	};
 
-	void movePointer(sf::RenderWindow& window, sf::FloatRect barBounds) {
+	void movePointer(sf::FloatRect barBounds) {
 		int newXPosition = sf::Mouse::getPosition(window).x;
 		if (newXPosition < barBounds.left) {
 			sprite.setPosition(barBounds.left, sprite.getPosition().y);
@@ -256,7 +257,7 @@ public:
 		return sprite.getGlobalBounds();
 	}
 
-	bool inBounds(sf::RenderWindow& window) {
+	bool inBounds() {
 		sf::Vector2i mousePosition = sf::Mouse::getPosition(window);
 		sf::FloatRect bounds = sprite.getGlobalBounds();
 		if (mousePosition.x < bounds.left + bounds.width && mousePosition.x > bounds.left &&
@@ -298,9 +299,9 @@ public:
 		sliderPointer = Pointer(buttonOffTexture, barX + barWidth * ((initialValue - minimumValue) / (maximumValue - minimumValue)), barY + barHeight / 2, pointerWidth, pointerWidth);
 	};
 
-	void draw(sf::RenderWindow& window) {
-		sliderBar.draw(window);
-		sliderPointer.draw(window);
+	void draw() {
+		sliderBar.draw();
+		sliderPointer.draw();
 	};
 
 	float getValue() {
@@ -309,13 +310,12 @@ public:
 		return minimumValue + value * (maximumValue - minimumValue);
 	};
 
-	void update(sf::RenderWindow& window) {
-		// CHANGE BASED ON USER FEEDBACK HERE VVVVV
-		if ((sliderPointer.inBounds(window) || sliderBar.inBounds(window)) && sf::Mouse::isButtonPressed(sf::Mouse::Left)) {
+	void update() {
+		if ((sliderPointer.inBounds() || sliderBar.inBounds()) && sf::Mouse::isButtonPressed(sf::Mouse::Left)) {
 			moving = true;
 		};
 		if (moving) {
-			sliderPointer.movePointer(window, sliderBar.getBounds());
+			sliderPointer.movePointer(sliderBar.getBounds());
 		};
 		if (!sf::Mouse::isButtonPressed(sf::Mouse::Left)) {
 			moving = false;

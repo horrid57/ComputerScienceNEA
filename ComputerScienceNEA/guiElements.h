@@ -2,24 +2,6 @@
 #include <SFML/Graphics.hpp>
 #include <iostream>
 
-// Variables
-long timeForLastFrame = 0;
-int roomHeight = 500;
-int roomWidth = 1000;
-int wallThickness = 5;
-float framerate = 60;
-float gameDifficulty = 0.2;
-int timerLength = 10;
-bool timerEnabled = false;
-int playerClass = 0;
-std::vector<std::string> classNames = { "Ranged", "Melee", "Balanced" };
-std::vector<std::string> classDescriptions = {
-    "The ranged class has a powerful bow\nbut has a sword that doesn't live\nup to expectations",
-    "The melee class has a huge sweeping sword\nand a slow, damaged bow that\ndoes little damage",
-    "The best of both worlds. This class has a\ndecent bow and a decent sword\nthat make it a good choice"
-};
-std::vector<sf::Texture> classImages;
-
 // Main Menu Elements
 Button mainStartButton;
 Button tutorialButton;
@@ -65,6 +47,14 @@ void initialiseElements() {
     wallTexture.loadFromFile("brown.jpg");
     keyTexture.loadFromFile("brown.jpg");
     enemyTexture.loadFromFile("green.png");
+    redTexture.loadFromFile("red.jpg");
+    playerAxis.loadFromFile("playerAxis.png");
+    playerDiagonal.loadFromFile("playerDiagonal.png");
+    playerAttackArea.loadFromFile("playerAttackArea.png");
+    enemyAxis.loadFromFile("enemyAxis.png");
+    enemyDiagonal.loadFromFile("enemyDiagonal.png");
+    enemyAttackArea.loadFromFile("playerAttackArea.png");
+    exitTexture.loadFromFile("exit.png");
 
     classImages = { buttonOnTexture, buttonOffTexture, defaultTexture };
 
@@ -106,7 +96,7 @@ void initialiseElements() {
     className = Label(classNames[playerClass], 0.1143, 0.2304, 0.1955, 0.0830);
     left = Button(false, "<", 0.0633, 0.4842, 0.0368, 0.0702);
     right = Button(false, ">", 0.3288, 0.4842, 0.0368, 0.0702);
-    classImage = Image(window, buttonOnTexture, 0.1045, 0.3415, 0.2200, 0.3333);
+    classImage = Image(buttonOnTexture, 0.1045, 0.3415, 0.2200, 0.3333);
     classDescription = Label(" ", 0.0419, 0.6901, 0.3454, 0.2678);
 
     // Defining Settings Menu Elements
@@ -118,5 +108,4 @@ void initialiseElements() {
     fullscreen = Button(false, "Fullscreen", 0.5792, 0.3184, 0.0738, 0.0700);
     refreshLabel = Label("Refresh Rate", 0.4232, 0.5130, 0.1537, 0.0800);
     refreshSlider = Slider(10, 144, framerate, 0.2500, 0.5930, 0.5000, 0.1500);
-
 };

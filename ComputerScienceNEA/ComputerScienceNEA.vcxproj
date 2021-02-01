@@ -147,16 +147,10 @@
     <ClCompile Include="main.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="textures.h" />
+    <ClInclude Include="globalVariables.h" />
     <ClInclude Include="guiComponents.h" />
     <ClInclude Include="guiElements.h" />
     <ClInclude Include="levelComponents.h" />
-  </ItemGroup>
-  <ItemGroup>
-    <Image Include="..\..\..\..\Desktop\blue.jpg" />
-  </ItemGroup>
-  <ItemGroup>
-    <Font Include="ARLRDBD.TTF" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

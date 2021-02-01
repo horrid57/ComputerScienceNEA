@@ -8,10 +8,11 @@
 std::string windowName = "Game Window";
 sf::RenderWindow window(sf::VideoMode(1920, 1080), windowName, sf::Style::Titlebar | sf::Style::Close);
 
-#include "textures.h"
+#include "globalVariables.h"
 #include "levelComponents.h"
 #include "guiComponents.h"
 #include "guiElements.h"
+
 
 bool contains(std::vector<sf::Vector2i>& vector, sf::Vector2i value) {
     for (int i = 0; i < vector.size(); i++) {
@@ -27,12 +28,13 @@ std::vector<Room> generateRooms() {
     std::vector<sf::Vector2i> positions = { sf::Vector2i(200, 400) };
     std::vector<std::string> doorIn = { "" };
     std::vector<std::string> doorOut;
+    std::vector<std::string> doorOut2;
 
     srand(time(0));
     int i = 0;
     int attempts = 0;
     int timesStuck = 0;
-    while (i < timerLength) {
+    while (i <= timerLength) {
         // rand() not truely random... 
         // srand() with a consistantly different starting value changes the start position of the string
         int randInt = rand() % 4;
@@ -134,147 +136,177 @@ std::vector<Room> generateRooms() {
             positions.erase(positions.end() - timesStuck, positions.end() - 1);
         }
     }
+
     doorOut.push_back("");
+
+    for (int i = 0; i < timerLength - 1; i++) {
+        sf::Vector2i lastPosition = positions[i];
+        sf::Vector2i nextPosition;
+        int randInt = rand() % 4;
+        switch (randInt)
+        {
+        case 0:
+            // LEFT
+            nextPosition = sf::Vector2i(lastPosition.x - roomWidth, lastPosition.y);
+            if (!contains(positions, nextPosition)) {
+                positions.push_back(nextPosition);
+                doorIn.push_back("Right");
+                doorOut.push_back("");
+                doorOut2.push_back("Left");
+            }
+            else {
+                doorOut2.push_back("");
+            }
+            break;
+        case 1:
+            nextPosition = sf::Vector2i(lastPosition.x, lastPosition.y - roomHeight);
+            if (!contains(positions, nextPosition)) {
+                positions.push_back(nextPosition);
+                doorIn.push_back("Bottom");
+                doorOut.push_back("");
+                doorOut2.push_back("Top");
+            }
+            else {
+                doorOut2.push_back("");
+            }
+            break;
+            // RIGHT
+        case 2:
+            nextPosition = sf::Vector2i(lastPosition.x + roomWidth, lastPosition.y);
+            if (!contains(positions, nextPosition)) {
+                positions.push_back(nextPosition);
+                doorIn.push_back("Left");
+                doorOut.push_back("");
+                doorOut2.push_back("Right");
+            }
+            else {
+                doorOut2.push_back("");
+            }
+            break;
+            // DOWN
+        case 3:
+            nextPosition = sf::Vector2i(lastPosition.x, lastPosition.y + roomHeight);
+            if (!contains(positions, nextPosition)) {
+                positions.push_back(nextPosition);
+                doorIn.push_back("Top");
+                doorOut.push_back("");
+                doorOut2.push_back("Bottom");
+            }
+            else {
+                doorOut2.push_back("");
+            }
+            break;
+        default:
+            doorOut2.push_back("");
+            break;
+        }
+    }
+
+    for (int i = doorOut2.size(); i < positions.size(); i++) {
+        doorOut2.push_back("");
+    }
+
+    int numberOfRooms = positions.size();
+    sf::Vector2i nextPosition;
+    for (int i = timerLength + 1; i < numberOfRooms; i++) {
+        int randInt = rand() % 4;
+        sf::Vector2i lastPosition = positions[i];
+        switch (randInt) {
+            // LEFT
+        case 0:
+            nextPosition = sf::Vector2i(lastPosition.x - roomWidth, lastPosition.y);
+            if (!contains(positions, nextPosition)) {
+                positions.push_back(nextPosition);
+                doorIn.push_back("Right");
+                doorOut[i] = "Left";
+            }
+            break;
+            // UP
+        case 1:
+            nextPosition = sf::Vector2i(lastPosition.x, lastPosition.y - roomHeight);
+            if (!contains(positions, nextPosition)) {
+                positions.push_back(nextPosition);
+                doorIn.push_back("Bottom");
+                doorOut[i] = "Top";
+            }
+            break;
+            // RIGHT
+        case 2:
+            nextPosition = sf::Vector2i(lastPosition.x + roomWidth, lastPosition.y);
+            if (!contains(positions, nextPosition)) {
+                positions.push_back(nextPosition);
+                doorIn.push_back("Left");
+                doorOut[i] = "Right";
+            }
+            break;
+            // DOWN
+        case 3:
+            nextPosition = sf::Vector2i(lastPosition.x, lastPosition.y + roomHeight);
+            if (!contains(positions, nextPosition)) {
+                positions.push_back(nextPosition);
+                doorIn.push_back("Top");
+                doorOut[i] = "Bottom";
+            }
+            break;
+        };
+    }
+
+    for (int i = doorOut2.size(); i < positions.size(); i++) {
+        doorOut2.push_back("");
+    }
+    for (int i = doorOut.size(); i < positions.size(); i++) {
+        doorOut.push_back("");
+    }
+
     for (int i = 0; i < positions.size(); i++) {
-        rooms.push_back(Room(wallTexture, buttonOnTexture, positions[i].x, positions[i].y, roomWidth, roomHeight, wallThickness, doorIn[i], doorOut[i]));
+        rooms.push_back(Room(positions[i].x, positions[i].y, roomWidth, roomHeight, wallThickness, doorIn[i], doorOut[i], doorOut2[i]));
+        if (i != timerLength && i != 0) {
+            int sideBuffer = 75;
+            int numberOfObsticles = 3 + rand() % 3;
+            sf::FloatRect rb = rooms[i].getBounds();
+            for (int j = 0; j < numberOfObsticles; j++) {
+                int width = (float)rand() / float(RAND_MAX) * 80 + 40;
+                rooms[i].addObstacle(Obstacle(rb.left + sideBuffer + (rb.width - 2 * sideBuffer - width) * ((float)rand() / float(RAND_MAX)),
+                    rb.top + sideBuffer + (rb.height - 2 * sideBuffer - width) * ((float)rand() / float(RAND_MAX)), width, width));
+            }
+        }
     };
 
     return rooms;
 }
 
-void transitionIn(sf::RenderWindow& window, float time, int rotation = 45) {
-    long initialTime = 0;
-    long endTime = 0;
-    float speed = window.getSize().x / time;
-    int offset;
-    sf::RectangleShape line1(sf::Vector2f(window.getSize().x, 100));
-    line1.setOrigin(sf::Vector2f(line1.getLocalBounds().width, 0));
-    line1.rotate(rotation);
-    line1.setPosition(0, window.getSize().y + 100);
-    line1.setFillColor(sf::Color::Blue);
-    sf::RectangleShape line2(sf::Vector2f(window.getSize().x, 100));
-    line2.setOrigin(sf::Vector2f(0, line2.getLocalBounds().height));
-    line2.rotate(rotation);
-    line2.setPosition(window.getSize().x, -100);
-    line2.setFillColor(sf::Color::Blue);
-    while (line1.getPosition().x <= window.getSize().x) {
-        initialTime = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
-        sf::Event event;
-        while (window.pollEvent(event))
-        {
-            if (event.type == sf::Event::Closed) {
-                window.close();
-            };
-        }
-        offset = speed * (float)timeForLastFrame / 1000000;
-        line1.setPosition(line1.getPosition().x + offset, line1.getPosition().y);
-        line2.setPosition(line2.getPosition().x - offset, line2.getPosition().y);
-        window.draw(line1);
-        window.draw(line2);
-        window.display();
-        endTime = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
-        timeForLastFrame = endTime - initialTime;
-    }
-}
-
-/*void transitionOut(sf::RenderWindow& window) {
-    long initialTime = 0;
-    long endTime = 0;
-    float speed = window.getSize().x / 1;
-    int offset;
-    sf::RectangleShape line1(sf::Vector2f(window.getSize().x * 2, window.getSize().x * 2));
-    line1.setOrigin(sf::Vector2f(line1.getLocalBounds().width, 0));
-    line1.rotate(45);
-    line1.setPosition(window.getSize().x, window.getSize().y + 100);
-    line1.setFillColor(sf::Color::Blue);
-    sf::RectangleShape line2(sf::Vector2f(window.getSize().x * 2, window.getSize().y * 2));
-    line2.rotate(45);
-    line2.setPosition(0, -2000);
-    line2.setFillColor(sf::Color::Blue);
-    while (line1.getPosition().x >= window.getView().getCenter().x - window.getView().getSize().x / 2) {
-        initialTime = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
-        sf::Event event;
-        while (window.pollEvent(event))
-        {
-            if (event.type == sf::Event::Closed) {
-                window.close();
-            };
-        }
-        window.clear();
-        offset = speed * (float)timeForLastFrame / 1000000;
-        line1.setPosition(line1.getPosition().x - offset, line1.getPosition().y);
-        line2.setPosition(line2.getPosition().x + offset, line2.getPosition().y);
-        window.draw(line1);
-        window.draw(line2);
-        window.display();
-        endTime = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
-        timeForLastFrame = endTime - initialTime;
-    }
-    }
-}*/
-
 void gameScreen(sf::RenderWindow& window) {
-    // vvvvvvvvv
-    //transitionIn(window, 1, 45);
-    // ^^^^^^
     long initialTime = 0;
     long endTime = 0;
-    std::vector<Room> rooms = generateRooms();
-    Player player = Player(buttonOffTexture, 300, 500, 50, 50, 1000, 5);
+    rooms = generateRooms();
+    std::vector<Wall> allWalls;
+    std::vector<Obstacle> allObstacles;
+    Player player = Player(buttonOffTexture, 300, 500, 50, 50, 600, 100);
     window.setView(sf::View(player.getCentre(), window.getView().getSize()));
+    int exitWidth = 100;
+    sf::FloatRect roomBounds = rooms[timerLength].getBounds();
+    Exit exit = Exit(roomBounds.left + (roomBounds.width - exitWidth) / 2, roomBounds.top + (roomBounds.height - exitWidth) / 2, exitWidth, exitWidth);
+    Message messageBar;
+    HUDTextElement healthDisplay = HUDTextElement(std::to_string(player.health));
 
-    std::vector<Enemy> enemies = {};
-    for (int i = 1; i < rooms.size() - 1; i++) {
+    for (int i = 1; i < rooms.size(); i++) {
+        for (int j = 0; j < rooms[i].walls.size(); j++) {
+            allWalls.push_back(rooms[i].walls[j]);
+        }
+        for (int j = 0; j < rooms[i].obstacles.size(); j++) {
+            allObstacles.push_back(rooms[i].obstacles[j]);
+        }
         Key key = Key(0, 0, 20, 20, false);
-        enemies = {};
         sf::FloatRect rb = rooms[i].getBounds();
         for (int j = 0; j < rand() % 3 + 2; j++) {
             if (j == 0) {
-                enemies.push_back(Enemy(rb.left + rb.width * ((float)rand() / float(RAND_MAX)), rb.top + rb.height * ((float)rand() / float(RAND_MAX)), 50, 50, 5, 5, 5, key));
+                while (!rooms[i].addEnemy(Enemy(rb.left + 50 + (rb.width - 50 * 2) * ((float)rand() / float(RAND_MAX)), rb.top + 50 + (rb.height - 50 * 2) * ((float)rand() / float(RAND_MAX)), 50, 50, 200, 5, 5, key))) { }
             }
             else {
-                enemies.push_back(Enemy(rb.left + rb.width * ((float)rand() / float(RAND_MAX)), rb.top + rb.height * ((float)rand() / float(RAND_MAX)), 50, 50, 5, 5, 5));
+                while (!rooms[i].addEnemy(Enemy(rb.left + 50 + (rb.width - 50 * 2) * ((float)rand() / float(RAND_MAX)), rb.top + 50 + (rb.height - 50 * 2) * ((float)rand() / float(RAND_MAX)), 50, 50, 200, 5, 5))) { }
             }
         }
-        rooms[i].setEnemies(enemies);
     };
-        
-    // vvvvv TRANSITION TEST vvvvv
-    /*float speed = window.getSize().x / 1;
-    int offset;
-    sf::RectangleShape line1(sf::Vector2f(window.getSize().x * 2, window.getSize().x * 2));
-    line1.setOrigin(sf::Vector2f(line1.getLocalBounds().width, 0));
-    line1.rotate(45);
-    line1.setPosition(window.getSize().x, window.getSize().y + 100);
-    line1.setFillColor(sf::Color::Blue);
-    sf::RectangleShape line2(sf::Vector2f(window.getSize().x * 2, window.getSize().y * 2));
-    line2.rotate(45);
-    line2.setPosition(0, -2000);
-    line2.setFillColor(sf::Color::Blue);
-    while (line1.getPosition().x >= window.getView().getCenter().x - window.getView().getSize().x / 2) {
-        initialTime = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
-        sf::Event event;
-        while (window.pollEvent(event))
-        {
-            if (event.type == sf::Event::Closed) {
-                window.close();
-            };
-        }
-        window.clear();
-        offset = speed * (float)timeForLastFrame / 1000000;
-        line1.setPosition(line1.getPosition().x - offset, line1.getPosition().y);
-        line2.setPosition(line2.getPosition().x + offset, line2.getPosition().y);
-        for (int i = 0; i < rooms.size(); i++) {
-            rooms[i].draw(window);
-        };
-        player.draw(window);
-        window.draw(line1);
-        window.draw(line2);
-        window.display();
-        endTime = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
-        timeForLastFrame = endTime - initialTime;
-    }*/
-    // ^^^^^ TRANSITION TEST ^^^^^
 
     while (window.isOpen()) {
         sf::Event event;
@@ -293,17 +325,43 @@ void gameScreen(sf::RenderWindow& window) {
         initialTime = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
         window.clear();
 
-        player.move(rooms, (float)timeForLastFrame / 1000000);
+        float speedScale = (float)timeForLastFrame / 1000000;
+        player.move(rooms, speedScale);
         window.setView(sf::View(player.getCentre(), window.getView().getSize()));
         player.attack(rooms);
-        player.pickUpKeys(rooms);
-
+        if (player.pickUpKeys(rooms)) {
+            messageBar.addMessage("Picked Up a Key");
+        }
         
         for (int i = 0; i < rooms.size(); i++) {
-            rooms[i].draw(window);
+            rooms[i].draw();
+            if (rooms[i].door.isOpened()) {
+                for (int j = 0; j < rooms[i].enemies.size(); j++) {
+                    rooms[i].enemies[j].searchForPlayer(player.getGlobalBounds(), allWalls, allObstacles);
+                    rooms[i].enemies[j].move(speedScale, player.sprite.getPosition(), allWalls, allObstacles);
+                    int damage = rooms[i].enemies[j].attackPlayer(player.sprite.getPosition());
+                    if (damage > 0) {
+                        player.takeDamage(damage);
+                        healthDisplay.updateText(std::to_string(player.health));
+                    }
+                }
+            }
         };
 
-        player.draw(window);
+
+        if (exit.checkCollision(player.getGlobalBounds()) && sf::Keyboard::isKeyPressed(sf::Keyboard::E)) {
+            return;
+        }
+        exit.draw();
+
+
+        player.draw();
+        messageBar.draw();
+        healthDisplay.draw();
+
+        if (player.isDead()) {
+            return;
+        }
 
         window.display();
         endTime = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
@@ -322,38 +380,39 @@ void gameMenu() {
 
         window.clear();
 
-        difficultySlider.draw(window);
-        menu.draw(window);
-        className.draw(window);
-        customisationTitle.draw(window);
-        difficultyLabel.draw(window);
-        lengthLabel.draw(window);
-        timerLabel.draw(window);
-        gameStart.draw(window);
-        timerFive.draw(window);
-        timerTen.draw(window);
-        timerFifthteen.draw(window);
-        timerTwenty.draw(window);
-        timerOn.draw(window);
-        timerOff.draw(window);
-        left.draw(window);
-        right.draw(window);
-        classImage.draw(window);
-        classDescription.draw(window);
+        difficultySlider.draw();
+        menu.draw();
+        className.draw();
+        customisationTitle.draw();
+        difficultyLabel.draw();
+        lengthLabel.draw();
+        timerLabel.draw();
+        gameStart.draw();
+        timerFive.draw();
+        timerTen.draw();
+        timerFifthteen.draw();
+        timerTwenty.draw();
+        timerOn.draw();
+        timerOff.draw();
+        left.draw();
+        right.draw();
+        classImage.draw();
+        classDescription.draw();
 
 
-        if (menu.isPressed(window)) {
+        if (menu.isPressed()) {
             return;
         }
-        if (gameStart.isPressed(window)) {
+        if (gameStart.isPressed()) {
             std::cout << classNames[playerClass] << ", " << gameDifficulty << ", " << timerEnabled << ", " << timerLength << "\n";
             gameScreen(window);
+            return;
         }
-        difficultySlider.update(window);
+        difficultySlider.update();
         gameDifficulty = difficultySlider.getValue();
         difficultyLabel.setText(difficultyLabel.getDefaultText() + ": " + std::to_string(difficultySlider.getValue()).substr(0, 4));
 
-        if (left.isPressed(window)) {
+        if (left.isPressed()) {
             playerClass--;
             if (playerClass < 0) {
                 playerClass = classNames.size() - 1;
@@ -362,7 +421,7 @@ void gameMenu() {
             classDescription.setText(classDescriptions[playerClass]);
             classImage.changeTexture(classImages[playerClass]);
         }
-        else if (right.isPressed(window)) {
+        else if (right.isPressed()) {
             playerClass++;
             if (playerClass > classNames.size() - 1) {
                 playerClass = 0;
@@ -372,7 +431,7 @@ void gameMenu() {
             classImage.changeTexture(classImages[playerClass]);
         };
 
-        if (timerFive.isPressed(window)) {
+        if (timerFive.isPressed()) {
             timerTen.setState(false);
             timerFifthteen.setState(false);
             timerTwenty.setState(false);
@@ -385,7 +444,7 @@ void gameMenu() {
 
             timerLength = 5;
         }
-        else if (timerTen.isPressed(window)) {
+        else if (timerTen.isPressed()) {
             timerFive.setState(false);
             timerFifthteen.setState(false);
             timerTwenty.setState(false);
@@ -398,7 +457,7 @@ void gameMenu() {
 
             timerLength = 10;
         }
-        else if (timerFifthteen.isPressed(window)) {
+        else if (timerFifthteen.isPressed()) {
             timerFive.setState(false);
             timerTen.setState(false);
             timerTwenty.setState(false);
@@ -411,7 +470,7 @@ void gameMenu() {
 
             timerLength = 15;
         }
-        else if (timerTwenty.isPressed(window)) {
+        else if (timerTwenty.isPressed()) {
             timerFive.setState(false);
             timerTen.setState(false);
             timerFifthteen.setState(false);
@@ -425,7 +484,7 @@ void gameMenu() {
             timerLength = 20;
         }
 
-        if (timerOff.isPressed(window)) {
+        if (timerOff.isPressed()) {
             timerOn.setState(false);
             timerOn.updateTexture(buttonOnTexture, buttonOffTexture);
             timerOff.setState(true);
@@ -433,7 +492,7 @@ void gameMenu() {
 
             timerEnabled = false;
         }
-        else if (timerOn.isPressed(window)) {
+        else if (timerOn.isPressed()) {
             timerOff.setState(false);
             timerOff.updateTexture(buttonOnTexture, buttonOffTexture);
             timerOn.setState(true);
@@ -460,22 +519,22 @@ void settingsMenu() {
 
         window.clear();
 
-        menu.draw(window);
-        settingsTitle.draw(window);
-        resolutionLabel.draw(window);
-        resolutionMin.draw(window);
-        resolutionMid.draw(window);
-        resolutionMax.draw(window);
-        fullscreen.draw(window);
-        refreshLabel.draw(window);
-        refreshSlider.draw(window);
+        menu.draw();
+        settingsTitle.draw();
+        resolutionLabel.draw();
+        resolutionMin.draw();
+        resolutionMid.draw();
+        resolutionMax.draw();
+        fullscreen.draw();
+        refreshLabel.draw();
+        refreshSlider.draw();
 
-        refreshSlider.update(window);
+        refreshSlider.update();
         framerate = refreshSlider.getValue();
         window.setFramerateLimit(framerate);
         refreshLabel.setText(refreshLabel.getDefaultText() + ": " + std::to_string((int)refreshSlider.getValue()));
 
-        if (resolutionMin.isPressed(window)) {
+        if (resolutionMin.isPressed()) {
             if (!resolutionMin.getState()) {
                 window.create(sf::VideoMode(1280, 720), windowName);
                 window.setView(sf::View(sf::FloatRect(0, 0, 1280, 720)));
@@ -490,7 +549,7 @@ void settingsMenu() {
                 fullscreen.updateTexture(buttonOnTexture, buttonOffTexture);
             }
         }
-        else if (resolutionMid.isPressed(window)) {
+        else if (resolutionMid.isPressed()) {
             if (!resolutionMid.getState()) {
                 window.create(sf::VideoMode(1920, 1080), windowName);
                 window.setView(sf::View(sf::FloatRect(0, 0, 1920, 1080)));
@@ -505,7 +564,7 @@ void settingsMenu() {
                 fullscreen.updateTexture(buttonOnTexture, buttonOffTexture);
             }
         }
-        else if (resolutionMax.isPressed(window)) {
+        else if (resolutionMax.isPressed()) {
             if (!resolutionMax.getState()) {
                 window.create(sf::VideoMode(2560, 1440), windowName);
                 window.setView(sf::View(sf::FloatRect(0, 0, 2560, 1440)));
@@ -520,7 +579,7 @@ void settingsMenu() {
                 fullscreen.updateTexture(buttonOnTexture, buttonOffTexture);
             }
         }
-        else if (fullscreen.isPressed(window)) {
+        else if (fullscreen.isPressed()) {
             if (!fullscreen.getState()) {
                 window.create(sf::VideoMode::getDesktopMode(), windowName, sf::Style::Fullscreen);
                 window.setView(sf::View(sf::FloatRect(0, 0, sf::VideoMode::getDesktopMode().width, sf::VideoMode::getDesktopMode().height)));
@@ -537,7 +596,7 @@ void settingsMenu() {
         }
 
 
-        if (menu.isPressed(window)) {
+        if (menu.isPressed()) {
             return;
         }
 
@@ -565,23 +624,35 @@ int main()
 
         window.clear();
 
-        mainStartButton.draw(window);
-        tutorialButton.draw(window);
-        settingsButton.draw(window);
-        exitButton.draw(window);
+        mainStartButton.draw();
+        tutorialButton.draw();
+        settingsButton.draw();
+        exitButton.draw();
 
-        if (mainStartButton.isPressed(window)) {
+        if (mainStartButton.isPressed()) {
             gameMenu();
+            if (resolutionMin.enabled) {
+                window.setView(sf::View(sf::FloatRect(0, 0, 1280, 720)));
+            }
+            else if (resolutionMid.enabled) {
+                window.setView(sf::View(sf::FloatRect(0, 0, 1920, 1080)));
+            }
+            else if (resolutionMax.enabled) {
+                window.setView(sf::View(sf::FloatRect(0, 0, 2560, 1440)));
+            }
+            else if (fullscreen.enabled) {
+                window.setView(sf::View(sf::FloatRect(0, 0, sf::VideoMode::getDesktopMode().width, sf::VideoMode::getDesktopMode().height)));
+            }
         }
-        else if (settingsButton.isPressed(window)) {
+        else if (settingsButton.isPressed()) {
             settingsMenu();
         }
-        else if (exitButton.isPressed(window)) {
+        else if (exitButton.isPressed()) {
             return 1;
         }
 
-
         window.display();
+
         if (sf::Keyboard::isKeyPressed(sf::Keyboard::Escape)) {
             return 0;
         }

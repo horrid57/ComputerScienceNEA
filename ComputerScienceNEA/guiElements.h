@@ -45,7 +45,7 @@ void initialiseElements() {
     buttonOnTexture.loadFromFile("green.png");
     arialRounded.loadFromFile("ARLRDBD.ttf");
     wallTexture.loadFromFile("brown.jpg");
-    keyTexture.loadFromFile("brown.jpg");
+    keyTexture.loadFromFile("keyTexture.png");
     enemyTexture.loadFromFile("green.png");
     redTexture.loadFromFile("red.jpg");
     playerAxis.loadFromFile("playerAxis.png");
@@ -53,8 +53,15 @@ void initialiseElements() {
     playerAttackArea.loadFromFile("playerAttackArea.png");
     enemyAxis.loadFromFile("enemyAxis.png");
     enemyDiagonal.loadFromFile("enemyDiagonal.png");
+    enemyAttackingAxis.loadFromFile("enemyAttackingAxis.png");
+    enemyAttackingDiagonal.loadFromFile("enemyAttackingDiagonal.png");
+    enemyAttackedAxis.loadFromFile("enemyAttackedAxis.png");
+    enemyAttackedDiagonal.loadFromFile("enemyAttackedDiagonal.png");
+    enemyDamageCooldownAxis.loadFromFile("enemyDamageCooldownAxis.png");
+    enemyDamageCooldownDiagonal.loadFromFile("enemyDamageCooldownDiagonal.png");
     enemyAttackArea.loadFromFile("playerAttackArea.png");
     exitTexture.loadFromFile("exit.png");
+    obstacleTexture.loadFromFile("obstacleTexture.png");
 
     classImages = { buttonOnTexture, buttonOffTexture, defaultTexture };
 

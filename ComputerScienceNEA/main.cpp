@@ -275,7 +275,7 @@ std::vector<Room> generateRooms() {
     return rooms;
 }
 
-void gameScreen(sf::RenderWindow& window) {
+bool gameScreen() {
     long initialTime = 0;
     long endTime = 0;
     rooms = generateRooms();
@@ -287,7 +287,9 @@ void gameScreen(sf::RenderWindow& window) {
     sf::FloatRect roomBounds = rooms[timerLength].getBounds();
     Exit exit = Exit(roomBounds.left + (roomBounds.width - exitWidth) / 2, roomBounds.top + (roomBounds.height - exitWidth) / 2, exitWidth, exitWidth);
     Message messageBar;
-    HUDTextElement healthDisplay = HUDTextElement(std::to_string(player.health));
+    HUDTextElement healthDisplay = HUDTextElement(std::to_string(player.health) + " / " + std::to_string(player.maximumHealth), 0.05, 0.9);
+    long timer = timerLength * 60 * 1000 * 1000;
+    HUDTextElement timerDisplay("Default Text", 0.8, 0.9);
 
     for (int i = 1; i < rooms.size(); i++) {
         for (int j = 0; j < rooms[i].walls.size(); j++) {
@@ -296,14 +298,24 @@ void gameScreen(sf::RenderWindow& window) {
         for (int j = 0; j < rooms[i].obstacles.size(); j++) {
             allObstacles.push_back(rooms[i].obstacles[j]);
         }
-        Key key = Key(0, 0, 20, 20, false);
+        Key key = Key(0, 0, 35, 35, false);
         sf::FloatRect rb = rooms[i].getBounds();
-        for (int j = 0; j < rand() % 3 + 2; j++) {
+        for (int j = 0; j < rand() % 5 + 2; j++) {
             if (j == 0) {
-                while (!rooms[i].addEnemy(Enemy(rb.left + 50 + (rb.width - 50 * 2) * ((float)rand() / float(RAND_MAX)), rb.top + 50 + (rb.height - 50 * 2) * ((float)rand() / float(RAND_MAX)), 50, 50, 200, 5, 5, key))) { }
+                while (!rooms[i].addEnemy(Enemy(rb.left + 50 + (rb.width - 50 * 2) * ((float)rand() / float(RAND_MAX)), 
+                    rb.top + 50 + (rb.height - 50 * 2) * ((float)rand() / float(RAND_MAX)),
+                    50, 50, 200, 5 + (int)(gameDifficulty * 10), 5 + (int)(gameDifficulty * 10), key))) { }
             }
             else {
-                while (!rooms[i].addEnemy(Enemy(rb.left + 50 + (rb.width - 50 * 2) * ((float)rand() / float(RAND_MAX)), rb.top + 50 + (rb.height - 50 * 2) * ((float)rand() / float(RAND_MAX)), 50, 50, 200, 5, 5))) { }
+                while (!rooms[i].addEnemy(Enemy(rb.left + 50 + (rb.width - 50 * 2) * ((float)rand() / float(RAND_MAX)),
+                    rb.top + 50 + (rb.height - 50 * 2) * ((float)rand() / float(RAND_MAX)),
+                    50, 50, 200, 5 + (int)(gameDifficulty * 10), 5 + (int)(gameDifficulty * 10)))) { }
+            }
+        }
+        for (int j = 0; j < rand() % 3 + 1; j++) {
+            while (!rooms[i].addEnemy(Enemy(rb.left + 50 + (rb.width - 50 * 2) * ((float)rand() / float(RAND_MAX)),
+                rb.top + 50 + (rb.height - 50 * 2) * ((float)rand() / float(RAND_MAX)),
+                60, 60, 200, 5 + (int)(gameDifficulty * 10), 5 + (int)(gameDifficulty * 10), true))) {
             }
         }
     };
@@ -318,12 +330,10 @@ void gameScreen(sf::RenderWindow& window) {
             if (sf::Keyboard::isKeyPressed(sf::Keyboard::Escape)) {
                 window.close();
             };
-            if (sf::Keyboard::isKeyPressed(sf::Keyboard::H)) {
-                rooms = generateRooms();
-            };
         }
         initialTime = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
-        window.clear();
+        window.clear(sf::Color::White);
+
 
         float speedScale = (float)timeForLastFrame / 1000000;
         player.move(rooms, speedScale);
@@ -339,23 +349,129 @@ void gameScreen(sf::RenderWindow& window) {
                 for (int j = 0; j < rooms[i].enemies.size(); j++) {
                     rooms[i].enemies[j].searchForPlayer(player.getGlobalBounds(), allWalls, allObstacles);
                     rooms[i].enemies[j].move(speedScale, player.sprite.getPosition(), allWalls, allObstacles);
-                    int damage = rooms[i].enemies[j].attackPlayer(player.sprite.getPosition());
+                    int damage = rooms[i].enemies[j].attackPlayer(player.sprite.getPosition(), player.getGlobalBounds(), allWalls, allObstacles);
                     if (damage > 0) {
                         player.takeDamage(damage);
-                        healthDisplay.updateText(std::to_string(player.health));
+                        healthDisplay.updateText(std::to_string(player.health) + " / " + std::to_string(player.maximumHealth));
                     }
                 }
             }
         };
 
+        if (exit.checkCollision(player.getGlobalBounds()) && sf::Keyboard::isKeyPressed(sf::Keyboard::E)) {
+            return true;
+        }
+        exit.draw();
+
+        player.draw();
+        messageBar.draw();
+        healthDisplay.draw();
+
+        if (timerEnabled) {
+            timer -= timeForLastFrame;
+            if (timer <= 0) {
+                return false;
+            }
+            timerDisplay.updateText(std::to_string(timer / (1000 * 1000)));
+            timerDisplay.draw();
+        }
+
+        if (player.isDead()) {
+            return false;
+        }
+
+        window.display();
+        endTime = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+        timeForLastFrame = endTime - initialTime;
+    }
+}
+
+void tutorialScreen() {
+    long initialTime = 0;
+    long endTime = 0;
+    rooms = {
+        Room(0, 0, roomWidth, roomHeight, wallThickness, "", "Right", ""),
+        Room(0 + roomWidth, 0, roomWidth, roomHeight, wallThickness, "", "Right", "Left"),
+        Room(0 + 2 * roomWidth, 0, roomWidth, roomHeight, wallThickness, "Left", "Right", ""),
+        Room(0 + 3 * roomWidth, 0, roomWidth, roomHeight, wallThickness, "Left", "Right", ""),
+        Room(0 + 4 * roomWidth, 0, roomWidth, roomHeight, wallThickness, "", "", "Left"),
+    };
+    
+    std::vector<Label> labels = {
+        Label((roomWidth / 2) - 300, 0, 600, 100, "Welcome to the Tutorial"),
+        Label((roomWidth / 2) - 300, roomHeight - 100, 600, 100, "Use W, A, S and D to Move"),
+        Label(roomWidth + (roomWidth / 2) - 300, 0, 600, 100, "If you have a Key, you can walk into Doors to open them"),
+        Label(roomWidth + (roomWidth / 2) - 300, roomHeight - 100, 600, 100, "You always start the game with 1 Key"),
+        Label(2 * roomWidth + (roomWidth / 2) - 300, 0, 600, 100, "Use Left Click to perform a Melee Attack\nRight Click performs a Ranged Attack"),
+        Label(2 * roomWidth + (roomWidth / 2) - 300, roomHeight - 100, 600, 100, "Kill the Enemy and pick up their Key"),
+        Label(3 * roomWidth + (roomWidth / 2) - 300, 0, 600, 100, "Not all enemies have Keys on them"),
+        Label(3 * roomWidth + (roomWidth / 2) - 300, roomHeight - 100, 600, 100, "Enemies will look for, and chase, you in-game\nWhen you are playing you can hide behind boxes to escape"),
+        Label(4 * roomWidth + (roomWidth / 2) - 300, 0, 600, 100, "Press E on the Exit to win"),
+    };
+
+    Player player = Player(buttonOffTexture, 300, 500, 50, 50, 600, 100);
+    window.setView(sf::View(player.getCentre(), window.getView().getSize()));
+
+    int exitWidth = 100;
+    sf::FloatRect roomBounds = rooms[4].getBounds();
+    Exit exit = Exit(roomBounds.left + (roomBounds.width - exitWidth) / 2, roomBounds.top + (roomBounds.height - exitWidth) / 2, exitWidth, exitWidth);
+
+    Message messageBar;
+    HUDTextElement healthDisplay = HUDTextElement(std::to_string(player.health) + " / " + std::to_string(player.maximumHealth), 0.05, 0.9);
+
+    sf::FloatRect rb = rooms[2].getBounds();
+    rooms[2].addEnemy(Enemy(rb.left + rb.width / 2 - 25, rb.top + rb.height / 2 - 25, 50, 50, 200, 10, 0, Key(0, 0, 35, 35, false)));
+    rb = rooms[3].getBounds();
+    rooms[3].addEnemy(Enemy(rb.left + rb.width / 2 - 125, rb.top + rb.height / 2 - 125, 50, 50, 200, 10, 0));
+    rooms[3].addEnemy(Enemy(rb.left + rb.width / 2 - 125, rb.top + rb.height / 2 + 75, 50, 50, 200, 10, 0));
+    rooms[3].addEnemy(Enemy(rb.left + rb.width / 2 + 75, rb.top + rb.height / 2 - 125, 50, 50, 200, 10, 0, Key(0, 0, 35, 35, false)));
+    rooms[3].addEnemy(Enemy(rb.left + rb.width / 2 + 75, rb.top + rb.height / 2 + 75, 50, 50, 200, 10, 0));
+    
+    
+    while (window.isOpen()) {
+        sf::Event event;
+        while (window.pollEvent(event))
+        {
+            if (event.type == sf::Event::Closed) {
+                window.close();
+            };
+            if (sf::Keyboard::isKeyPressed(sf::Keyboard::Escape)) {
+                window.close();
+            };
+        }
+        initialTime = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+        window.clear(sf::Color::White);
+
+
+        float speedScale = (float)timeForLastFrame / 1000000;
+        player.move(rooms, speedScale);
+        window.setView(sf::View(player.getCentre(), window.getView().getSize()));
+        player.attack(rooms);
+        if (player.pickUpKeys(rooms)) {
+            messageBar.addMessage("Picked Up a Key");
+        }
+
+        for (int i = 0; i < rooms.size(); i++) {
+            rooms[i].draw();
+            if (rooms[i].door.isOpened()) {
+                for (int j = 0; j < rooms[i].enemies.size(); j++) {
+                    rooms[i].enemies[j].move(speedScale, player.sprite.getPosition(), rooms[i].walls, rooms[i].obstacles, false);
+                    rooms[i].enemies[j].attackPlayer(player.sprite.getPosition(), player.getGlobalBounds(), rooms[i].walls, rooms[i].obstacles);
+                }
+            }
+        };
 
         if (exit.checkCollision(player.getGlobalBounds()) && sf::Keyboard::isKeyPressed(sf::Keyboard::E)) {
             return;
         }
         exit.draw();
 
-
         player.draw();
+
+        for (int i = 0; i < labels.size(); i++) {
+            labels[i].draw();
+        }
+
         messageBar.draw();
         healthDisplay.draw();
 
@@ -366,6 +482,49 @@ void gameScreen(sf::RenderWindow& window) {
         window.display();
         endTime = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
         timeForLastFrame = endTime - initialTime;
+    }
+}
+
+void resetView() {
+    if (resolutionMin.enabled) {
+        window.setView(sf::View(sf::FloatRect(0, 0, 1280, 720)));
+    }
+    else if (resolutionMid.enabled) {
+        window.setView(sf::View(sf::FloatRect(0, 0, 1920, 1080)));
+    }
+    else if (resolutionMax.enabled) {
+        window.setView(sf::View(sf::FloatRect(0, 0, 2560, 1440)));
+    }
+    else if (fullscreen.enabled) {
+        window.setView(sf::View(sf::FloatRect(0, 0, sf::VideoMode::getDesktopMode().width, sf::VideoMode::getDesktopMode().height)));
+    }
+}
+
+void endScreen(bool victory) {
+
+    Label mainText = Label(victory ? "VICTORY" : "DEFEAT", 0.3, 0.3, 0.4, 0.1);
+
+    while (window.isOpen()) {
+        sf::Event event;
+        while (window.pollEvent(event))
+        {
+            if (event.type == sf::Event::Closed) {
+                window.close();
+            };
+            if (sf::Keyboard::isKeyPressed(sf::Keyboard::Escape)) {
+                window.close();
+            };
+        }
+        window.clear();
+        
+        if (menu.isPressed()) {
+            return;
+        }
+
+        menu.draw();
+        mainText.draw();
+
+        window.display();
     }
 }
 
@@ -405,7 +564,9 @@ void gameMenu() {
         }
         if (gameStart.isPressed()) {
             std::cout << classNames[playerClass] << ", " << gameDifficulty << ", " << timerEnabled << ", " << timerLength << "\n";
-            gameScreen(window);
+            bool outcome = gameScreen();
+            resetView();
+            endScreen(outcome);
             return;
         }
         difficultySlider.update();
@@ -631,18 +792,10 @@ int main()
 
         if (mainStartButton.isPressed()) {
             gameMenu();
-            if (resolutionMin.enabled) {
-                window.setView(sf::View(sf::FloatRect(0, 0, 1280, 720)));
-            }
-            else if (resolutionMid.enabled) {
-                window.setView(sf::View(sf::FloatRect(0, 0, 1920, 1080)));
-            }
-            else if (resolutionMax.enabled) {
-                window.setView(sf::View(sf::FloatRect(0, 0, 2560, 1440)));
-            }
-            else if (fullscreen.enabled) {
-                window.setView(sf::View(sf::FloatRect(0, 0, sf::VideoMode::getDesktopMode().width, sf::VideoMode::getDesktopMode().height)));
-            }
+        }
+        else if (tutorialButton.isPressed()) {
+            tutorialScreen();
+            resetView();
         }
         else if (settingsButton.isPressed()) {
             settingsMenu();

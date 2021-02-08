@@ -16,13 +16,17 @@ public:
 	int state = 0;
 	std::vector<std::string> messages;
 	std::string currentMessage = "";
+	float x = 0;
+	float y = 0;
 
-	HUDTextElement(std::string message) {
+	HUDTextElement(std::string message, float xPosition, float yPosition) {
+		x = xPosition;
+		y = yPosition;
 		text.setString(message);
 		text.setPosition(0, 0);
 		text.setFont(arialRounded);
 		text.setCharacterSize(60);
-		text.setFillColor(sf::Color::White);
+		text.setFillColor(sf::Color::Black);
 		updateDefaultPosition();
 	}
 
@@ -30,7 +34,7 @@ public:
 		sf::Vector2f viewCentre = window.getView().getCenter();
 		sf::Vector2f viewSize = window.getView().getSize();
 		sf::FloatRect textBounds = text.getGlobalBounds();
-		defaultPosition = sf::Vector2i(viewCentre.x - viewSize.x / 2 + textBounds.width + 50, viewCentre.y + viewSize.y / 2 - textBounds.height - 50);
+		defaultPosition = sf::Vector2i(viewCentre.x + viewSize.x * (x - 0.5), viewCentre.y + viewSize.y * (y - 0.5));
 	}
 
 	void updateText(std::string message) {
@@ -85,7 +89,7 @@ public:
 		text.setPosition(0, 0);
 		text.setFont(arialRounded);
 		text.setCharacterSize(30);
-		text.setFillColor(sf::Color::White);
+		text.setFillColor(sf::Color::Black);
 		updateDefaultPosition();
 	}
 
@@ -226,7 +230,7 @@ public:
 
 	Obstacle(int xPosition, int yPosition, int width, int height) {
 		sprite.setPosition(xPosition, yPosition);
-		sprite.setTexture(wallTexture);
+		sprite.setTexture(obstacleTexture);
 		sf::FloatRect bounds = sprite.getGlobalBounds();
 		sprite.setScale(width / bounds.width, height / bounds.height);
 	};
@@ -284,8 +288,7 @@ public:
 	};
 };
 
-
-class VisionProjectile {
+class Projectile {
 public:
 	float xChange = 0;
 	float yChange = 0;
@@ -295,27 +298,32 @@ public:
 	float y = 0;
 	sf::RectangleShape shape;
 
-	VisionProjectile() { };
+	Projectile() { };
 
-	VisionProjectile(float xPosition, float yPosition, float speed, float angle) {
+	Projectile(float xPosition, float yPosition, float speed, float angle, int size = 20) {
 		initialX = xPosition;
 		initialY = yPosition;
 		x = xPosition;
 		y = yPosition;
-		shape.setSize(sf::Vector2f(20, 20));
+		shape.setSize(sf::Vector2f(size, size));
+		shape.setFillColor(sf::Color::Black);
 		yChange = -speed * cos((angle / 180.0) * 3.1415);
 		xChange = speed * sin((angle / 180.0) * 3.1415);
 	}
 
 	bool update() {
-		x += xChange;
-		y += yChange;
+		float deltaTime = ((float)timeForLastFrame / 1000000);
+		x += xChange * deltaTime;
+		y += yChange * deltaTime;
 		shape.setPosition(x, y);
-		window.draw(shape);
 		return false;
 	}
 
-	bool collidedWithPlayer(sf::FloatRect player) {
+	void draw() {
+		window.draw(shape);
+	}
+
+	bool collidedWithEntity(sf::FloatRect player) {
 		return shape.getGlobalBounds().intersects(player);
 	}
 
@@ -323,7 +331,6 @@ public:
 		return (abs(sqrt(pow(initialX - x, 2) + pow(initialY - y, 2)) > distance));
 	}
 };
-
 
 class Enemy {
 public:
@@ -341,32 +348,49 @@ public:
 
 	bool searching = false;
 	bool playerInSight = false;
-	std::vector<VisionProjectile> visionProjectiles;
+	std::vector<Projectile> visionProjectiles;
+	std::vector<Projectile> damageProjectiles;
 	int failedSearchAttempts = 0;
 	long searchTimer = 0;
 	long searchDelay = 500000;
 	bool lastMovementOnAxis = true;
 	float stoppingDistanceFromTarget = 100;
 	float attackingDistance = 150;
+	sf::Vector2f lastKnownPlayerPosition;
 
 	long attackCooldown = 2000000;
 	long attackTimer = 0;
 	bool attacking = false;
+	int spriteNumber = 0;
+	int currentSpriteNumber = 0;
+	long attackEffectDuration = 400000;
+	long attackEffectTimer = attackEffectDuration + 1;
+	int roundedRotation = 0;
+
+	bool rangedEnemy = true;
+	long rangedAttackCooldown = 2000000;
+	long rangedAttackTimer = 0;
+
 
 	Enemy() { };
 
-	Enemy(int xPosition, int yPosition, int width, int height, float enemySpeed, int maxHealth, int hitStrength, Key key) {
+	Enemy(int xPosition, int yPosition, int width, int height, float enemySpeed, int maxHealth, int hitStrength, Key key, bool ranged = false) {
+		rangedEnemy = ranged;
 		heldKey = key;
 		hasKey = true;
 		defaultConstructor(xPosition, yPosition, width, height, enemySpeed, maxHealth, hitStrength);
 	};
 
-	Enemy(int xPosition, int yPosition, int width, int height, int enemySpeed, int maxHealth, int hitStrength) {
+	Enemy(int xPosition, int yPosition, int width, int height, int enemySpeed, int maxHealth, int hitStrength, bool ranged = false) {
+		rangedEnemy = ranged;
 		defaultConstructor(xPosition, yPosition, width, height, enemySpeed, maxHealth, hitStrength);
 	};
 
 	void defaultConstructor(int xPosition, int yPosition, int width, int height, int enemySpeed, int maxHealth, int hitStrength) {
+		attackingDistance = (rangedEnemy) ? 500 : 150;
+		stoppingDistanceFromTarget = (rangedEnemy) ? 350 : 100;
 		sprite.setPosition(xPosition, yPosition);
+		lastKnownPlayerPosition = sf::Vector2f(xPosition, yPosition);
 		sprite.setTexture(enemyAxis);
 		sf::FloatRect bounds = sprite.getGlobalBounds();
 		sprite.setOrigin(bounds.width / 2, bounds.height / 2);
@@ -388,7 +412,7 @@ public:
 			}
 			if (!searching) {
 				for (int i = rotation - 70; i <= rotation + 70; i += 5) {
-					visionProjectiles.push_back(VisionProjectile(sprite.getPosition().x, sprite.getPosition().y, 20, i));
+					visionProjectiles.push_back(Projectile(sprite.getPosition().x, sprite.getPosition().y, 1000, i));
 				}
 				searching = true;
 			}
@@ -397,8 +421,12 @@ public:
 			for (int i = 0; i < visionProjectiles.size(); i++) {
 				bool collided = false;
 				visionProjectiles[i].update();
-				if (visionProjectiles[i].collidedWithPlayer(player)) {
+				/*
+				visionProjectiles[i].draw();
+				*/
+				if (visionProjectiles[i].collidedWithEntity(player)) {
 					foundPlayer = true;
+					lastKnownPlayerPosition = visionProjectiles[i].shape.getPosition();
 				}
 				else if (visionProjectiles[i].travelledFurtherThan(1000)) {
 					toRemove.push_back(i);
@@ -445,16 +473,25 @@ public:
 		return (abs(sqrt(pow(sprite.getPosition().x - position.x, 2) + pow(sprite.getPosition().y - position.y, 2))));
 	}
 
-	void move(float speedScale, sf::Vector2f playerPosition, std::vector<Wall>& walls, std::vector<Obstacle>& obstacles) {
+	void move(float speedScale, sf::Vector2f playerPosition, std::vector<Wall>& walls, std::vector<Obstacle>& obstacles, bool movingEnabled = true) {
 		if (health > 0) {
 			if (failedSearchAttempts > 2) {
 				rotation += rand() % 150 + 30;
 				failedSearchAttempts = 0;
 			}
+			float tanValue;
+			bool move = false;
 			if (playerInSight && distanceFrom(playerPosition) > stoppingDistanceFromTarget) {
-				float tanValue = atan2(playerPosition.y - sprite.getPosition().y, playerPosition.x - sprite.getPosition().x) / 3.1415 * 180 + 90;
+				tanValue = atan2(playerPosition.y - sprite.getPosition().y, playerPosition.x - sprite.getPosition().x) / 3.1415 * 180 + 90;
 				rotation = tanValue;
-
+				move = true;
+			}
+			if (!playerInSight && distanceFrom(lastKnownPlayerPosition) > 10) {
+				tanValue = atan2(lastKnownPlayerPosition.y - sprite.getPosition().y, lastKnownPlayerPosition.x - sprite.getPosition().x) / 3.1415 * 180 + 90;
+				rotation = tanValue;
+				move = true;
+			}
+			if (move && movingEnabled) {
 				if (!onDamageCooldown) {
 					sf::Vector2f oldPosition = sprite.getPosition();
 					sprite.setPosition(oldPosition.x + speed * speedScale * sin((tanValue / 180) * 3.1415), oldPosition.y);
@@ -501,40 +538,63 @@ public:
 			}
 
 			if (onDamageCooldown) {
-				if (damageTimer > 0) {
-					damageTimer -= timeForLastFrame;
+				if (damageTimer < damageCooldown) {
+					damageTimer += timeForLastFrame;
 				}
-				if (damageTimer < 0) {
+				if (damageTimer > damageCooldown) {
 					onDamageCooldown = false;
-					int a = ((int)rotation / 45) * 45;
-					int b = a + 45;
-					int roundedRotation = (rotation - a > b - rotation) ? b : a;
-					if (roundedRotation % 2 == 0) {
-						sprite.setTexture(enemyAxis);
-					}
-					else {
-						sprite.setTexture(enemyDiagonal);
-					}
 				}
 			}
+
+			int lower = ((int)rotation / 45) * 45;
+			int higher = lower + 45;
+			roundedRotation = (rotation - lower > higher - rotation) ? higher : lower;
+			if (roundedRotation % 2 == 0) {
+				if (!lastMovementOnAxis) {
+					lastMovementOnAxis = true;
+					spriteNumber--;
+				}
+				sprite.setRotation(roundedRotation);
+			}
 			else {
-				int a = ((int)rotation / 45) * 45;
-				int b = a + 45;
-				int roundedRotation = (rotation - a > b - rotation) ? b : a;
-				if (roundedRotation % 2 == 0) {
-					if (!lastMovementOnAxis) {
-						sprite.setTexture(enemyAxis);
-						lastMovementOnAxis = true;
-					}
-					sprite.setRotation(roundedRotation);
+				if (lastMovementOnAxis) {
+					lastMovementOnAxis = false;
+					spriteNumber++;
 				}
-				else {
-					if (lastMovementOnAxis) {
-						sprite.setTexture(enemyDiagonal);
-						lastMovementOnAxis = false;
-					}
-					sprite.setRotation(roundedRotation - 45);
+				sprite.setRotation(roundedRotation - 45);
+			}
+
+			if (spriteNumber != currentSpriteNumber) {
+				switch (spriteNumber) {
+				case 0:
+					sprite.setTexture(enemyAxis);
+					break;
+				case 1:
+					sprite.setTexture(enemyDiagonal);
+					break; 
+				case 2:
+					sprite.setTexture(enemyAttackingAxis);
+					break;
+				case 3:
+					sprite.setTexture(enemyAttackingDiagonal);
+					break;
+				case 4:
+					sprite.setTexture(enemyAttackedAxis);
+					break;
+				case 5:
+					sprite.setTexture(enemyAttackedDiagonal);
+					break;
+				case 6:
+					sprite.setTexture(enemyDamageCooldownAxis);
+					break;
+				case 7:
+					sprite.setTexture(enemyDamageCooldownDiagonal);
+					break;
+				default:
+					sprite.setTexture(redTexture);
+					break;
 				}
+				currentSpriteNumber = spriteNumber;
 			}
 		}
 	}
@@ -544,21 +604,110 @@ public:
 		return (distance <= attackingDistance);
 	}
 
-	int attackPlayer(sf::Vector2f position) {
+	int attackPlayer(sf::Vector2f position, sf::FloatRect playerBounds, std::vector<Wall>& walls, std::vector<Obstacle>& obstacles) {
 		if (attackTimer < attackCooldown && attacking) {
 			attackTimer += timeForLastFrame;
 		}
+		if (attackEffectTimer <= attackEffectDuration) {
+			attackEffectTimer += timeForLastFrame;
+		}
+		if (rangedAttackTimer < rangedAttackCooldown) {
+			rangedAttackTimer += timeForLastFrame;
+		}
 		if (inRangeOf(position)) {
-			attacking = true;
-			if (attackTimer >= attackCooldown && playerInSight && !onDamageCooldown) {
-				attackTimer = 0;
-				return strength;
+			if (rangedEnemy) {
+				attacking = true;
+				if (playerInSight && !onDamageCooldown) {
+					if (roundedRotation % 2 == 0) {
+						spriteNumber = 2;
+					}
+					else {
+						spriteNumber = 3;
+					}
+					if (rangedAttackTimer >= rangedAttackCooldown) {
+						rangedAttackTimer = 0;
+						sf::Vector2f pos = sprite.getPosition();
+						float angle = atan2(position.y - pos.y, position.x - pos.x) / 3.1415 * 180 + 90;
+						damageProjectiles.push_back(Projectile(pos.x, pos.y, 1000, angle, 20));
+					}
+				}
+			}
+			else {
+				attacking = true;
+				if (playerInSight && !onDamageCooldown) {
+					if (roundedRotation % 2 == 0) {
+						spriteNumber = 2;
+					}
+					else {
+						spriteNumber = 3;
+					}
+					if (attackTimer >= attackCooldown) {
+						attackEffectTimer = 0;
+						attackTimer = 0;
+						return strength;
+					}
+				}
 			}
 		}
 		else {
+			if (!onDamageCooldown) {
+				if (roundedRotation % 2 == 0) {
+					spriteNumber = 0;
+				}
+				else {
+					spriteNumber = 1;
+				}
+			}
+			attackTimer = 0;
 			attacking = false;
 		}
-		return 0;
+		if (attackEffectTimer < attackEffectDuration && !onDamageCooldown) {
+			if (roundedRotation % 2 == 0) {
+				spriteNumber = 4;
+			}
+			else {
+				spriteNumber = 5;
+			}
+		}
+		int damage = 0;
+		std::vector<int> toRemove = {};
+		for (int i = 0; i < damageProjectiles.size(); i++) {
+			bool hitSomething = false;
+			damageProjectiles[i].update();
+			damageProjectiles[i].draw();
+			if (damageProjectiles[i].collidedWithEntity(playerBounds)) {
+				damage += strength;
+				toRemove.push_back(i);
+				hitSomething = true;
+			}
+			if (hitSomething) {
+				continue;
+			}
+			for (int j = 0; j < walls.size(); j++) {
+				if (walls[j].checkCollision(damageProjectiles[i].shape.getGlobalBounds())) {
+					toRemove.push_back(i);
+					hitSomething = true;
+					break;
+				}
+			}
+			if (hitSomething) {
+				continue;
+			}
+			for (int j = 0; j < obstacles.size(); j++) {
+				if (obstacles[j].checkCollision(damageProjectiles[i].shape.getGlobalBounds())) {
+					toRemove.push_back(i);
+					hitSomething = true;
+					break;
+				}
+			}
+			if (damageProjectiles[i].travelledFurtherThan(1000) && !hitSomething) {
+				toRemove.push_back(i);
+			}
+		}
+		for (int i = toRemove.size() - 1; i >= 0; i--) {
+			damageProjectiles.erase(damageProjectiles.begin() + toRemove[i]);
+		}
+		return damage;
 	}
 
 	void draw() {
@@ -576,10 +725,17 @@ public:
 
 	void damage(int damage) {
 		if (!onDamageCooldown) {
+			attackTimer = 0;
+			rangedAttackTimer = 0;
 			health -= damage;
 			onDamageCooldown = true;
-			damageTimer = damageCooldown;
-			sprite.setTexture(redTexture);
+			damageTimer = 0;
+			if (roundedRotation % 2 == 0) {
+				spriteNumber = 6;
+			}
+			else {
+				spriteNumber = 7;
+			}
 			playerInSight = true;
 			failedSearchAttempts = -3;
 		}
@@ -664,13 +820,22 @@ public:
 		}
 	};
 
+	sf::FloatRect getViewBounds() {
+		sf::Vector2f viewSize = window.getView().getSize();
+		sf::Vector2f viewCentre = window.getView().getCenter();
+		return sf::FloatRect(viewCentre.x - viewSize.x / 2, viewCentre.y - viewSize.y / 2, viewSize.x, viewSize.y);
+	}
+
 	void draw() {
-		for (int i = 0; i < walls.size(); i++) {
-			walls[i].draw();
-		};
-		for (int i = 0; i < obstacles.size(); i++) {
-			obstacles[i].draw();
-		};
+		if (bounds.intersects(getViewBounds())) {
+			for (int i = 0; i < walls.size(); i++) {
+				walls[i].draw();
+			};
+			for (int i = 0; i < obstacles.size(); i++) {
+				obstacles[i].draw();
+			};
+			key.draw();
+		}
 		if (!door.isOpened()) {
 			door.draw();
 		}
@@ -679,20 +844,21 @@ public:
 				enemies[i].draw();
 			}
 		};
-		key.draw();
 	};
 
 	bool checkCollisions(sf::FloatRect entity) {
-		for (int i = 0; i < walls.size(); i++) {
-			if (walls[i].checkCollision(entity)) {
-				return true;
-			}
-		};
-		for (int i = 0; i < obstacles.size(); i++) {
-			if (obstacles[i].checkCollision(entity)) {
-				return true;
-			}
-		};
+		if (bounds.intersects(getViewBounds())) {
+			for (int i = 0; i < walls.size(); i++) {
+				if (walls[i].checkCollision(entity)) {
+					return true;
+				}
+			};
+			for (int i = 0; i < obstacles.size(); i++) {
+				if (obstacles[i].checkCollision(entity)) {
+					return true;
+				}
+			};
+		}
 		return false;
 	};
 
@@ -706,15 +872,20 @@ public:
 		return false;
 	};
 
-	void attackEnemies(sf::FloatRect entity, int attackDamage = 0) {
-		for (int i = 0; i < enemies.size(); i++) {
-			if (enemies[i].checkCollision(entity) && attackDamage != 0) {
-				enemies[i].damage(attackDamage);
-				if (enemies[i].droppingKey()) {
-					key = enemies[i].dropKey();
+	bool attackEnemies(sf::FloatRect entity, int attackDamage = 0) {
+		bool hitEnemy = false;
+		if (bounds.intersects(getViewBounds())) {
+			for (int i = 0; i < enemies.size(); i++) {
+				if (enemies[i].checkCollision(entity) && attackDamage != 0) {
+					hitEnemy = true;
+					enemies[i].damage(attackDamage);
+					if (enemies[i].droppingKey()) {
+						key = enemies[i].dropKey();
+					}
 				}
 			}
 		}
+		return hitEnemy;
 	};
 
 	bool checkKeyCollision(sf::FloatRect entity) {
@@ -746,6 +917,7 @@ public:
 	sf::Sprite sprite;
 	sf::Sprite attackArea;
 	int health = 0;
+	int maximumHealth = 0;
 	int x = 0;
 	int y = 0;
 	int speed = 0;
@@ -759,13 +931,17 @@ public:
 	bool collided = false;
 	int keys = 1;
 	bool lastMovementOnAxis = true;
-	long attackCooldown = 500000;
+	long attackCooldown = 1000000;
 	long attackEffectVisible = 80000;
 	long attackTimer = attackEffectVisible;
+	long rangedAttackCooldown = 2000000;
+	long rangedAttackTimer = 0;
+	std::vector<Projectile> projectiles;
 
 	Player() { };
 
 	Player(sf::Texture& texture, int xPosition, int yPosition, int playerWidth, int playerHeight, int playerSpeed, int maxHealth) {
+		maximumHealth = maxHealth;
 		health = maxHealth;
 		x = xPosition;
 		y = yPosition;
@@ -911,6 +1087,9 @@ public:
 	};
 
 	void draw() {
+		for (int i = 0; i < projectiles.size(); i++) {
+			projectiles[i].draw();
+		}
 		window.draw(sprite);
 		if (attackTimer < attackEffectVisible) {
 			window.draw(attackArea);
@@ -932,6 +1111,40 @@ public:
 					rooms[i].attackEnemies(attackArea.getGlobalBounds(), 4);
 				}
 			}
+		}
+		if (rangedAttackTimer < rangedAttackCooldown) {
+			rangedAttackTimer += timeForLastFrame;
+		}
+		else {
+			if (sf::Mouse::isButtonPressed(sf::Mouse::Right)) {
+				rangedAttackTimer = 0;
+				sf::Vector2i mp = sf::Mouse::getPosition(window);
+				sf::Vector2f view = window.getView().getSize();
+				float angle = atan2(mp.y - view.y / 2, mp.x - view.x / 2) / 3.1415 * 180 + 90;
+				projectiles.push_back(Projectile(x, y, 1000, angle, 20));
+			}
+		}
+		std::vector<int> toRemove = {};
+		for (int i = 0; i < projectiles.size(); i++) {
+			projectiles[i].update();
+			bool hitSomething = false;
+			for (int j = 0; j < rooms.size(); j++) {
+				if (rooms[j].attackEnemies(projectiles[i].shape.getGlobalBounds(), 10)) {
+					hitSomething = true;
+				}
+				else if (rooms[j].checkCollisions(projectiles[i].shape.getGlobalBounds())) {
+					hitSomething = true;
+				}
+				else if (rooms[j].checkDoorCollisions(projectiles[i].shape.getGlobalBounds())) {
+					hitSomething = true;
+				}
+			}
+			if (projectiles[i].travelledFurtherThan(1000) || hitSomething) {
+				toRemove.push_back(i);
+			}
+		}
+		for (int i = toRemove.size() - 1; i >= 0; i--) {
+			projectiles.erase(projectiles.begin() + toRemove[i]);
 		}
 	};
 

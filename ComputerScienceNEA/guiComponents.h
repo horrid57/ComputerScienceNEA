@@ -36,7 +36,7 @@ public:
 
 	Label() { };
 
-	Label(std::string message, float buttonX, float buttonY, float buttonWidth, float buttonHeight) {
+	Label(std::string message, float labelX, float labelY, float labelWidth, float labelHeight) {
 		defaultText = message;
 		text.setString(message);
 		text.setFont(arialRounded);
@@ -44,9 +44,21 @@ public:
 
 		sf::Vector2u windowSize = window.getSize();
 		sprite.setTexture(buttonOffTexture);
-		sprite.setPosition(buttonX * windowSize.x, buttonY * windowSize.y);
+		sprite.setPosition(labelX * windowSize.x, labelY * windowSize.y);
 		sf::FloatRect bounds = sprite.getLocalBounds();
-		sprite.setScale((buttonWidth * windowSize.x) / bounds.width, (buttonHeight * windowSize.y) / bounds.height);
+		sprite.setScale((labelWidth * windowSize.x) / bounds.width, (labelHeight * windowSize.y) / bounds.height);
+		positionText();
+	};
+
+	Label(int labelX, int labelY, int labelWidth, int labelHeight, std::string message) {
+		text.setString(message);
+		text.setFont(arialRounded);
+		text.setCharacterSize(300);
+
+		sprite.setTexture(buttonOffTexture);
+		sprite.setPosition(labelX, labelY);
+		sf::FloatRect bounds = sprite.getLocalBounds();
+		sprite.setScale(labelWidth / bounds.width, labelHeight / bounds.height);
 		positionText();
 	};
 

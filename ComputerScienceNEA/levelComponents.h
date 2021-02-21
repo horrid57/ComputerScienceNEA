@@ -770,6 +770,7 @@ public:
 	sf::FloatRect bounds = sf::FloatRect(0, 0, 0, 0);
 	std::vector<Enemy> enemies = {};
 	std::vector<Obstacle> obstacles = {};
+	int enemiesKilledInLastAttack = 0;
 
 	Room() { };
 
@@ -872,13 +873,16 @@ public:
 		return false;
 	};
 
-	bool attackEnemies(sf::FloatRect entity, int attackDamage = 0) {
-		bool hitEnemy = false;
+	int attackEnemies(sf::FloatRect entity, int attackDamage = 0) {
+		int hitEnemy = false;
 		if (bounds.intersects(getViewBounds())) {
 			for (int i = 0; i < enemies.size(); i++) {
 				if (enemies[i].checkCollision(entity) && attackDamage != 0) {
 					hitEnemy = true;
 					enemies[i].damage(attackDamage);
+					if (enemies[i].isDead()) {
+						enemiesKilledInLastAttack++;
+					}
 					if (enemies[i].droppingKey()) {
 						key = enemies[i].dropKey();
 					}
@@ -937,10 +941,16 @@ public:
 	long rangedAttackCooldown = 2000000;
 	long rangedAttackTimer = 0;
 	std::vector<Projectile> projectiles;
+	int ammo;
+	int doorsOpened;
+	float meleeDamage;
+	float rangedDamage;
 
 	Player() { };
 
-	Player(sf::Texture& texture, int xPosition, int yPosition, int playerWidth, int playerHeight, int playerSpeed, int maxHealth) {
+	Player(int xPosition, int yPosition, int playerWidth, int playerHeight, int playerSpeed, int maxHealth, int startingAmmo, 
+		float meleeAttackDamage, long meleeAttackCooldown, float rangedAttackDamage, long rangedAttackCooldown) {
+		ammo = startingAmmo;
 		maximumHealth = maxHealth;
 		health = maxHealth;
 		x = xPosition;
@@ -1116,7 +1126,8 @@ public:
 			rangedAttackTimer += timeForLastFrame;
 		}
 		else {
-			if (sf::Mouse::isButtonPressed(sf::Mouse::Right)) {
+			if (sf::Mouse::isButtonPressed(sf::Mouse::Right) && ammo > 0) {
+				ammo--;
 				rangedAttackTimer = 0;
 				sf::Vector2i mp = sf::Mouse::getPosition(window);
 				sf::Vector2f view = window.getView().getSize();
@@ -1148,6 +1159,15 @@ public:
 		}
 	};
 
+	int tallyDead(std::vector<Room>& rooms) {
+		int total = 0;
+		for (int i = 0; i < rooms.size(); i++) {
+			total += rooms[i].enemiesKilledInLastAttack;
+			rooms[i].enemiesKilledInLastAttack = 0;
+		}
+		return total;
+	}
+
 	bool pickUpKeys(std::vector<Room>& rooms) {
 		int keysPickedUp = 0;
 		for (int i = 0; i < rooms.size(); i++) {
@@ -1165,6 +1185,41 @@ public:
 
 	bool isDead() {
 		return health <= 0;
+	}
+
+	void pickUpAmmo(int amount) {
+		ammo += amount;
+	}
+
+	void pickUpHealth(int amount) {
+		if (!(health + amount > maximumHealth)) {
+			health += amount;
+		}
+	}
+
+	int getAmmoCount() {
+		return ammo;
+	}
+
+	int getHealth() {
+		return health;
+	}
+
+	int updateDoorsOpened(std::vector<Room>& rooms) {
+		// Returns how many new doors are opened
+		int total = 0;
+		for (Room room : rooms) {
+			if (room.door.isOpened()) {
+				total++;
+			}
+		}
+		int oldDoorsOpened = doorsOpened;
+		doorsOpened = total;
+		return total - oldDoorsOpened;
+	}
+
+	int getDoorsOpened() {
+		return doorsOpened;
 	}
 };
 

@@ -151,6 +151,7 @@
     <ClInclude Include="guiComponents.h" />
     <ClInclude Include="guiElements.h" />
     <ClInclude Include="levelComponents.h" />
+    <ClInclude Include="ratingSystem.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -32,5 +32,8 @@
     <ClInclude Include="globalVariables.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="ratingSystem.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

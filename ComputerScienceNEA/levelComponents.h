@@ -949,7 +949,11 @@ public:
 	Player() { };
 
 	Player(int xPosition, int yPosition, int playerWidth, int playerHeight, int playerSpeed, int maxHealth, int startingAmmo, 
-		float meleeAttackDamage, long meleeAttackCooldown, float rangedAttackDamage, long rangedAttackCooldown) {
+		float meleeAttackDamage, long meleeAttackCooldown, float rangedAttackDamage, long _rangedAttackCooldown) {
+		meleeDamage = meleeAttackDamage;
+		attackCooldown = meleeAttackCooldown;
+		rangedDamage = rangedAttackDamage;
+		rangedAttackCooldown = _rangedAttackCooldown;
 		ammo = startingAmmo;
 		maximumHealth = maxHealth;
 		health = maxHealth;
@@ -1118,7 +1122,7 @@ public:
 			if (sf::Mouse::isButtonPressed(sf::Mouse::Left)) {
 				attackTimer = 0;
 				for (int i = 0; i < rooms.size(); i++) {
-					rooms[i].attackEnemies(attackArea.getGlobalBounds(), 4);
+					rooms[i].attackEnemies(attackArea.getGlobalBounds(), meleeDamage);
 				}
 			}
 		}
@@ -1140,7 +1144,7 @@ public:
 			projectiles[i].update();
 			bool hitSomething = false;
 			for (int j = 0; j < rooms.size(); j++) {
-				if (rooms[j].attackEnemies(projectiles[i].shape.getGlobalBounds(), 10)) {
+				if (rooms[j].attackEnemies(projectiles[i].shape.getGlobalBounds(), rangedDamage)) {
 					hitSomething = true;
 				}
 				else if (rooms[j].checkCollisions(projectiles[i].shape.getGlobalBounds())) {

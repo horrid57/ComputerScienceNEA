@@ -289,7 +289,7 @@ bool gameScreen() {
         player = Player(300, 500, 50, 50, 800, 100, 20, 4, 1000000, 12, 1000000);
     }
     else if (playerClass == 1) {    // MELEE
-        player = Player(300, 500, 50, 50, 650, 100, 8, 6, 7500000, 9, 1400000);
+        player = Player(300, 500, 50, 50, 650, 100, 8, 6, 750000, 9, 1400000);
     }
     else if (playerClass == 2) {    //BALANCED
         player = Player(300, 500, 50, 50, 500, 100, 12, 9, 500000, 5, 1800000);
